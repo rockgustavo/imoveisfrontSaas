@@ -1,0 +1,8 @@
+<nav class="bn">
+  @for (item of items; track item.route) {
+    <a class="bn-item" [routerLink]="item.route" routerLinkActive="active" [title]="item.label">
+      <i class="bi {{ item.icon }}"></i>
+      <span>{{ item.label }}</span>
+    </a>
+  }
+</nav>

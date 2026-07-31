@@ -1,0 +1,56 @@
+:host {
+  display: block;
+}
+
+.tb {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  height: var(--topbar-height);
+  padding: 0 1rem;
+  background: var(--topbar-bg);
+  border-bottom: 1px solid var(--topbar-border);
+}
+
+.tb-burger {
+  padding: 0.25rem 0.55rem;
+  border: 0;
+  border-radius: 0.4rem;
+  background: transparent;
+  color: var(--bs-body-color);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--bs-secondary-bg);
+  }
+}
+
+.tb-spacer {
+  flex: 1 1 auto;
+}
+
+.tb-brand {
+  align-items: center;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--bs-body-color);
+
+  i {
+    color: var(--sidebar-active);
+  }
+}
+
+.tb-user {
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.tb-username {
+  @media (max-width: 575.98px) {
+    display: none;
+  }
+}

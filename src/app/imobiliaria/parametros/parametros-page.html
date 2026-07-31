@@ -1,0 +1,54 @@
+<h1 class="page-title h4 mb-3">Parâmetros do tenant</h1>
+
+<div class="card">
+  <div class="card-body">
+    <form [formGroup]="form" (ngSubmit)="salvar()">
+      @if (erro()) {
+        <div class="alert alert-danger" role="alert">{{ erro()?.detail }}</div>
+      }
+
+      <div class="mb-3">
+        <label class="form-label" for="comissaoPercentualTeto">Teto de comissão (%)</label>
+        <input
+          id="comissaoPercentualTeto"
+          class="form-control"
+          type="number"
+          step="0.01"
+          formControlName="comissaoPercentualTeto"
+        />
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="orcamentoValidadeDiasPadrao">Validade padrão do orçamento (dias)</label>
+        <input
+          id="orcamentoValidadeDiasPadrao"
+          class="form-control"
+          type="number"
+          formControlName="orcamentoValidadeDiasPadrao"
+        />
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="geocodificacaoTentativasMax">Tentativas máximas de geocodificação</label>
+        <input
+          id="geocodificacaoTentativasMax"
+          class="form-control"
+          type="number"
+          formControlName="geocodificacaoTentativasMax"
+        />
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="cepCacheJanelaDias">Janela do cache de CEP (dias)</label>
+        <input id="cepCacheJanelaDias" class="form-control" type="number" formControlName="cepCacheJanelaDias" />
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="fusoHorario">Fuso horário</label>
+        <input id="fusoHorario" class="form-control" formControlName="fusoHorario" />
+      </div>
+
+      <button class="btn btn-primary" type="submit" [disabled]="salvando()">Salvar</button>
+    </form>
+  </div>
+</div>

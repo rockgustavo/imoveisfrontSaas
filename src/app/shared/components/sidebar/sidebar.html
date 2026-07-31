@@ -1,0 +1,13 @@
+<div class="sb-brand">
+  <i class="bi bi-building"></i>
+  <span class="sb-brand-text">Imobiliária</span>
+</div>
+
+<nav class="sb-nav">
+  @for (item of items; track item.route) {
+    <a class="sb-link" [routerLink]="item.route" routerLinkActive="active" [title]="item.label">
+      <i class="bi {{ item.icon }}"></i>
+      <span class="sb-link-text">{{ item.label }}</span>
+    </a>
+  }
+</nav>
