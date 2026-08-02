@@ -9,6 +9,7 @@ describe('ImobiliariaService', () => {
   let service: ImobiliariaService;
   let httpTesting: HttpTestingController;
 
+  const tenantUrl = 'http://localhost:8080/api/v1/tenant';
   const parametrosUrl = 'http://localhost:8080/api/v1/tenant/parametros';
 
   beforeEach(() => {
@@ -22,6 +23,22 @@ describe('ImobiliariaService', () => {
 
   afterEach(() => {
     httpTesting.verify();
+  });
+
+  it('busca a identidade do tenant corrente', () => {
+    let resultado: { razaoSocial: string } | undefined;
+    service.buscarTenant().subscribe((tenant) => (resultado = tenant));
+
+    const requisicao = httpTesting.expectOne(tenantUrl);
+    expect(requisicao.request.method).toBe('GET');
+    requisicao.flush({
+      id: '019fc00d-c6f7-72cb-a1d6-0366c9502bc2',
+      razaoSocial: 'Corretora Exemplo Ltda',
+      slug: 'corretora-exemplo',
+      status: 'ATIVA'
+    });
+
+    expect(resultado?.razaoSocial).toBe('Corretora Exemplo Ltda');
   });
 
   it('busca os parâmetros do tenant e mantém o percentual como string', () => {

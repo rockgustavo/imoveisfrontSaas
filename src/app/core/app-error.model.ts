@@ -3,4 +3,5 @@ export interface AppError {
   title: string;
   detail: string;
   codigo?: string;
+  campos?: Record<string, string>;
 }

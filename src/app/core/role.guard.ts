@@ -4,7 +4,7 @@ import { AuthGuardData, createAuthGuard } from 'keycloak-angular';
 
 export function acessoPermitido(route: ActivatedRouteSnapshot, authData: AuthGuardData): boolean {
   const { authenticated, grantedRoles } = authData;
-  const papelExigido = route.data['papel'] as string | undefined;
+  const papelExigido = route.data['papel'] as string | string[] | undefined;
 
   if (!authenticated) {
     return false;
@@ -12,7 +12,8 @@ export function acessoPermitido(route: ActivatedRouteSnapshot, authData: AuthGua
   if (!papelExigido) {
     return true;
   }
-  return grantedRoles.realmRoles.includes(papelExigido);
+  const papeisAceitos = Array.isArray(papelExigido) ? papelExigido : [papelExigido];
+  return papeisAceitos.some((papel) => grantedRoles.realmRoles.includes(papel));
 }
 
 export const roleGuard = createAuthGuard<CanActivateFn>(async (route, _state, authData) => {

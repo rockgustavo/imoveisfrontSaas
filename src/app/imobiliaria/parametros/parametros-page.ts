@@ -2,13 +2,29 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { AppError } from '../../core/app-error.model';
+import { CampoErro } from '../../shared/components/campo-erro/campo-erro';
+import { ResumoValidacao } from '../../shared/components/resumo-validacao/resumo-validacao';
+import { CampoPendente, camposPendentes } from '../../shared/validators/campos-pendentes';
+import {
+  aplicarErrosDoServidor,
+  campoInvalido,
+  limparErrosDoServidor
+} from '../../shared/validators/erros-do-servidor';
+import { maiorQueZero } from '../../shared/validators/maior-que-zero.validator';
 import { ImobiliariaService } from '../imobiliaria.service';
 import { ParametrosTenant } from '../parametros-tenant.model';
-import { maiorQueZero } from './parametros-tenant.validators';
+
+const ROTULOS: Record<string, string> = {
+  comissaoPercentualTeto: 'Teto de comissão (%)',
+  orcamentoValidadeDiasPadrao: 'Validade padrão do orçamento (dias)',
+  geocodificacaoTentativasMax: 'Tentativas máximas de geocodificação',
+  cepCacheJanelaDias: 'Janela do cache de CEP (dias)',
+  fusoHorario: 'Fuso horário'
+};
 
 @Component({
   selector: 'app-parametros-page',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, CampoErro, ResumoValidacao],
   templateUrl: './parametros-page.html',
   styleUrl: './parametros-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -18,6 +34,7 @@ export class ParametrosPage {
 
   protected readonly salvando = signal(false);
   protected readonly erro = signal<AppError | null>(null);
+  protected readonly pendencias = signal<CampoPendente[]>([]);
 
   protected readonly form = new FormGroup({
     comissaoPercentualTeto: new FormControl<number | null>(null, [Validators.required, maiorQueZero]),
@@ -34,12 +51,19 @@ export class ParametrosPage {
     });
   }
 
+  protected invalido(campo: string): boolean {
+    return campoInvalido(this.form, campo);
+  }
+
   protected salvar(): void {
+    limparErrosDoServidor(this.form);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.pendencias.set(camposPendentes(this.form, ROTULOS));
       return;
     }
 
+    this.pendencias.set([]);
     this.salvando.set(true);
     this.erro.set(null);
 
@@ -49,7 +73,9 @@ export class ParametrosPage {
         this.salvando.set(false);
       },
       error: (erro: AppError) => {
-        this.erro.set(erro);
+        const naoMapeados = aplicarErrosDoServidor(this.form, erro);
+        this.pendencias.set(erro.campos ? [...camposPendentes(this.form, ROTULOS), ...naoMapeados] : []);
+        this.erro.set(erro.campos ? null : erro);
         this.salvando.set(false);
       }
     });

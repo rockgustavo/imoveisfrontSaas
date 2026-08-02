@@ -10,6 +10,7 @@ interface ProblemDetailBody {
   title?: string;
   detail?: string;
   codigo?: string;
+  campos?: Record<string, string>;
 }
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
@@ -36,7 +37,8 @@ export function paraAppError(erro: unknown): AppError {
         status: erro.error.status ?? erro.status,
         title: erro.error.title ?? 'Erro',
         detail: erro.error.detail ?? erro.message,
-        codigo: erro.error.codigo
+        codigo: erro.error.codigo,
+        campos: erro.error.campos
       };
     }
     return { status: erro.status, title: 'Erro de comunicação', detail: erro.message };

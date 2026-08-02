@@ -47,10 +47,13 @@ src/app/
 │   ├── role.guard.ts          bloqueia rota por papel
 │   ├── keycloak.config.ts     realm, client, opções de init
 │   └── services/theme.service.ts
-├── shared/                   shell e navegação
+├── shared/                   shell, navegação e validação
 │   ├── nav-items.ts           fonte única dos itens de menu
-│   └── components/            topbar, sidebar, bottom-nav
-└── imobiliaria/              domínio — serviço HTTP, modelos, telas
+│   ├── page-response.model.ts contrato genérico de paginação, espelha o backend
+│   ├── validators/            validadores reaproveitáveis + erros vindos do backend
+│   └── components/            topbar, sidebar, bottom-nav, campo-erro, resumo-validacao
+├── imobiliaria/              domínio — serviço HTTP, modelos, telas
+└── pessoa/                   domínio — cadastro, papéis e inativação
 ```
 
 Pasta por domínio, não por tipo de arquivo: a tela, o serviço e o modelo de `imobiliaria` ficam juntos, do mesmo jeito que o módulo correspondente no backend. Domínio novo é pasta nova, não um arquivo a mais em cada uma de cinco pastas técnicas.
@@ -62,6 +65,7 @@ Pasta por domínio, não por tipo de arquivo: a tela, o serviço e o modelo de `
 | Um serviço por domínio encapsulando `HttpClient` | Componente não conhece URL nem formato de payload; trocar contrato mexe em um arquivo |
 | Interceptor único para token e erro | Toda requisição autenticada e todo erro traduzido no mesmo lugar, sem repetir `catchError` por chamada |
 | Mapeamento manual `record` ↔ modelo | Sem camada de mapper; o `record` do backend vira interface TypeScript direta |
+| `shared/page-response.model.ts` genérico | Contrato de paginação é o mesmo em todo módulo (`content`, `page`, `size`, `totalElements`, `totalPages`) — uma interface, reaproveitada, em vez de repetir a forma em cada domínio |
 
 `any` é erro de revisão.
 
@@ -70,6 +74,24 @@ Pasta por domínio, não por tipo de arquivo: a tela, o serviço e o modelo de `
 Sidebar fixa colapsável (desktop) + topbar sticky + bottom nav (abaixo de 992px). Os três consomem a mesma fonte de navegação — [`shared/nav-items.ts`](src/app/shared/nav-items.ts) — então adicionar um item de menu é editar um array, não três templates.
 
 O layout parte do menor breakpoint e cresce, em vez de ser desktop adaptado depois: a bottom nav é o caminho de navegação padrão no celular, não uma sidebar espremida.
+
+### Validação em duas camadas
+
+O front valida antes de enviar; o backend valida de novo e é ele quem garante — a API é chamável direto, então validação client-side é conveniência de UX, nunca a regra.
+
+| Camada | O quê |
+|---|---|
+| Front, antes do submit | Campo obrigatório, dígito verificador de CPF/CNPJ ([`shared/validators/`](src/app/shared/validators/)), formato de e-mail. Bloqueia o envio e marca o campo |
+| Back, sempre | `@Valid` + regra de domínio. Devolve `400` com `campos{}` (campo → mensagem) ou erro de negócio com `codigo` |
+| Front, ao receber o erro | `campos{}` vira erro no control correspondente e aparece sob o campo; erro de negócio vai para o alerta do topo |
+
+O erro aparece em dois lugares ao mesmo tempo, porque resolvem problemas diferentes: [`campo-erro`](src/app/shared/components/campo-erro/campo-erro.ts) mostra a mensagem **sob o campo**, e [`resumo-validacao`](src/app/shared/components/resumo-validacao/resumo-validacao.ts) abre um alerta **nomeando o que falta** ("Nome — Campo obrigatório", "CNPJ — Campo obrigatório"). Só o inline não basta: em formulário longo, ou em tela pequena, o campo pendente pode estar fora da área visível no momento do clique.
+
+O rótulo do resumo vem da tela, não do nome do control — `documento` aparece como "CPF" ou "CNPJ" conforme o tipo escolhido.
+
+`aplicarErrosDoServidor` marca o control com a chave `servidor` **sem apagar** os erros de validação local, e devolve os campos que não existem no formulário em vez de descartá-los silenciosamente — um campo novo no backend não some da tela, entra no resumo.
+
+O texto é o mesmo dos dois lados ("Campo obrigatório"): o front tira de `mensagens-validacao.ts`, o backend de `ValidationMessages.properties`. O usuário não percebe qual das duas camadas barrou.
 
 ### Tema claro/escuro
 
@@ -89,6 +111,6 @@ Authorization Code + PKCE contra o Keycloak, via `keycloak-angular`. O token fic
 npm test
 ```
 
-Cobrem a regra de negócio, com preferência por teste unitário: validadores de parâmetro, tradução de erro HTTP em `AppError` no interceptor, autorização por papel no guard, e o comportamento do formulário de parâmetros.
+Cobrem a regra de negócio, com preferência por teste unitário: validadores de parâmetro, tradução de erro HTTP em `AppError` no interceptor, autorização por papel (único ou lista) no guard, e o comportamento dos formulários e telas de listagem — parâmetros do tenant e cadastro/papéis/inativação de pessoas.
 
 Componentes de shell (topbar, sidebar, bottom-nav) e o serviço de tema não têm teste unitário de propósito — são casca de apresentação e manipulação de DOM, sem regra de negócio a proteger.

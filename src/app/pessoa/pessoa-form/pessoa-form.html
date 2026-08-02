@@ -1,0 +1,129 @@
+<a class="btn btn-link ps-0 mb-2" routerLink="/pessoas"><i class="bi bi-arrow-left me-1"></i>Voltar</a>
+
+<h1 class="page-title h4 mb-3">{{ modoEdicao ? (pessoa()?.nome ?? 'Pessoa') : 'Nova pessoa' }}</h1>
+
+@if (erro()) {
+  <div class="alert alert-danger" role="alert">{{ erro()?.detail }}</div>
+}
+
+<app-resumo-validacao [campos]="pendencias()" />
+
+<div class="card mb-3">
+  <div class="card-body">
+    <form [formGroup]="form" (ngSubmit)="salvar()">
+      <div class="row g-3">
+        <div class="col-6 col-md-3">
+          <label class="form-label" for="tipoDocumento">Tipo</label>
+          <select id="tipoDocumento" class="form-select" formControlName="tipoDocumento">
+            <option value="CPF">CPF</option>
+            <option value="CNPJ">CNPJ</option>
+          </select>
+        </div>
+        <div class="col-6 col-md-4">
+          <label class="form-label" for="documento">Documento <span class="text-danger">*</span></label>
+          <input
+            id="documento"
+            class="form-control"
+            [class.is-invalid]="invalido('documento')"
+            formControlName="documento"
+            placeholder="Só números"
+          />
+          <app-campo-erro [control]="form.get('documento')" />
+        </div>
+        <div class="col-12 col-md-5">
+          <label class="form-label" for="nome">Nome <span class="text-danger">*</span></label>
+          <input id="nome" class="form-control" [class.is-invalid]="invalido('nome')" formControlName="nome" />
+          <app-campo-erro [control]="form.get('nome')" />
+        </div>
+        <div class="col-12">
+          <label class="form-label" for="email">E-mail</label>
+          <input
+            id="email"
+            class="form-control"
+            [class.is-invalid]="invalido('email')"
+            type="email"
+            formControlName="email"
+          />
+          <app-campo-erro [control]="form.get('email')" />
+          <div class="form-text">Obrigatório só para papéis Usuário e Administrador.</div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary mt-3" type="submit" [disabled]="salvando() || carregando()">
+        {{ modoEdicao ? 'Salvar' : 'Cadastrar' }}
+      </button>
+    </form>
+  </div>
+</div>
+
+@if (modoEdicao && pessoa(); as pessoaAtual) {
+  <div class="card mb-3">
+    <div class="card-body">
+      <h2 class="h6 mb-3">Papéis</h2>
+
+      @if (pessoaAtual.papeis.length === 0) {
+        <p class="text-muted">Nenhum papel atribuído.</p>
+      } @else {
+        <ul class="list-group mb-3">
+          @for (papel of pessoaAtual.papeis; track papel) {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              {{ papel }}
+              @if (podeGerenciar) {
+                <button class="btn btn-outline-danger btn-sm" (click)="removerPapel(papel)">Remover</button>
+              }
+            </li>
+          }
+        </ul>
+      }
+
+      @if (podeGerenciar) {
+        <app-resumo-validacao [campos]="pendenciasPapel()" />
+
+        <form class="row g-2 align-items-end" [formGroup]="papelForm" (ngSubmit)="atribuirPapel()">
+          <div class="col-6 col-md-4">
+            <label class="form-label" for="papel">Novo papel</label>
+            <select id="papel" class="form-select" formControlName="papel">
+              <option value="PROPRIETARIO">Proprietário</option>
+              <option value="USUARIO">Usuário</option>
+              <option value="ADMINISTRADOR">Administrador</option>
+            </select>
+          </div>
+          <div class="col-6 col-md-5">
+            <label class="form-label" for="papelEmail">E-mail (Usuário/Administrador)</label>
+            <input
+              id="papelEmail"
+              class="form-control"
+              [class.is-invalid]="invalidoNoPapel('email')"
+              type="email"
+              formControlName="email"
+            />
+            <app-campo-erro [control]="papelForm.get('email')" />
+          </div>
+          <div class="col-12 col-md-3 d-grid">
+            <button class="btn btn-outline-primary" type="submit" [disabled]="salvando()">Atribuir</button>
+          </div>
+        </form>
+      }
+    </div>
+  </div>
+
+  @if (podeGerenciar) {
+    <div class="card border-danger-subtle">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="h6 mb-1">Inativação</h2>
+          <p class="text-muted mb-0">
+            @if (pessoaAtual.ativo) {
+              Pessoa nunca é excluída fisicamente — só inativada.
+            } @else {
+              Esta pessoa já está inativa.
+            }
+          </p>
+        </div>
+        @if (pessoaAtual.ativo) {
+          <button class="btn btn-outline-danger" (click)="inativar()">Inativar</button>
+        }
+      </div>
+    </div>
+  }
+}

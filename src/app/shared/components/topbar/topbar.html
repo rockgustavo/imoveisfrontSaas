@@ -3,9 +3,13 @@
     <i class="bi bi-list"></i>
   </button>
 
-  <span class="tb-brand d-flex d-lg-none">
-    <i class="bi bi-building me-2"></i>Imobiliária
-  </span>
+  <span class="tb-brand d-flex d-lg-none"> <i class="bi bi-building me-2"></i>Imobiliária </span>
+
+  @if (razaoSocial()) {
+    <span class="tb-tenant d-none d-md-flex align-items-center" [title]="razaoSocial()">
+      <i class="bi bi-shop me-1"></i>{{ razaoSocial() }}
+    </span>
+  }
 
   <div class="tb-spacer"></div>
 

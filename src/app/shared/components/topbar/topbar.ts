@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Output, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Output, inject, signal } from '@angular/core';
 import Keycloak from 'keycloak-js';
 
+import { ImobiliariaService } from '../../../imobiliaria/imobiliaria.service';
 import { ThemeService } from '../../../core/services/theme.service';
 
 @Component({
@@ -12,8 +13,18 @@ import { ThemeService } from '../../../core/services/theme.service';
 export class Topbar {
   @Output() toggleSidebar = new EventEmitter<void>();
 
+  private readonly imobiliariaService = inject(ImobiliariaService);
+
   protected readonly keycloak = inject(Keycloak);
   protected readonly theme = inject(ThemeService);
+  protected readonly razaoSocial = signal('');
+
+  constructor() {
+    this.imobiliariaService.buscarTenant().subscribe({
+      next: (tenant) => this.razaoSocial.set(tenant.razaoSocial),
+      error: () => this.razaoSocial.set('')
+    });
+  }
 
   protected get username(): string {
     return (this.keycloak.tokenParsed?.['preferred_username'] as string | undefined) ?? '';

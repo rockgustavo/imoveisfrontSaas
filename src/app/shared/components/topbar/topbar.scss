@@ -42,6 +42,22 @@
   }
 }
 
+.tb-tenant {
+  min-width: 0;
+  max-width: 22rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--bs-secondary-color);
+
+  i {
+    flex-shrink: 0;
+    color: var(--sidebar-active);
+  }
+}
+
 .tb-user {
   display: flex;
   align-items: center;

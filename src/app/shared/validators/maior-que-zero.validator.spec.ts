@@ -1,6 +1,6 @@
 import { FormControl } from '@angular/forms';
 
-import { maiorQueZero } from './parametros-tenant.validators';
+import { maiorQueZero } from './maior-que-zero.validator';
 
 describe('maiorQueZero', () => {
   it('aceita valor maior que zero', () => {

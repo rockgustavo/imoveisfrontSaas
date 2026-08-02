@@ -4,4 +4,7 @@ export interface NavItem {
   route: string;
 }
 
-export const NAV_ITEMS: NavItem[] = [{ label: 'Parâmetros', icon: 'bi-sliders', route: '/parametros' }];
+export const NAV_ITEMS: NavItem[] = [
+  { label: 'Pessoas', icon: 'bi-people', route: '/pessoas' },
+  { label: 'Parâmetros', icon: 'bi-sliders', route: '/parametros' }
+];

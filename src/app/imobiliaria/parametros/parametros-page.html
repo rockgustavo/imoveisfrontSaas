@@ -7,45 +7,74 @@
         <div class="alert alert-danger" role="alert">{{ erro()?.detail }}</div>
       }
 
+      <app-resumo-validacao [campos]="pendencias()" />
+
       <div class="mb-3">
-        <label class="form-label" for="comissaoPercentualTeto">Teto de comissão (%)</label>
+        <label class="form-label" for="comissaoPercentualTeto">
+          Teto de comissão (%) <span class="text-danger">*</span>
+        </label>
         <input
           id="comissaoPercentualTeto"
           class="form-control"
+          [class.is-invalid]="invalido('comissaoPercentualTeto')"
           type="number"
           step="0.01"
           formControlName="comissaoPercentualTeto"
         />
+        <app-campo-erro [control]="form.get('comissaoPercentualTeto')" />
       </div>
 
       <div class="mb-3">
-        <label class="form-label" for="orcamentoValidadeDiasPadrao">Validade padrão do orçamento (dias)</label>
+        <label class="form-label" for="orcamentoValidadeDiasPadrao">
+          Validade padrão do orçamento (dias) <span class="text-danger">*</span>
+        </label>
         <input
           id="orcamentoValidadeDiasPadrao"
           class="form-control"
+          [class.is-invalid]="invalido('orcamentoValidadeDiasPadrao')"
           type="number"
           formControlName="orcamentoValidadeDiasPadrao"
         />
+        <app-campo-erro [control]="form.get('orcamentoValidadeDiasPadrao')" />
       </div>
 
       <div class="mb-3">
-        <label class="form-label" for="geocodificacaoTentativasMax">Tentativas máximas de geocodificação</label>
+        <label class="form-label" for="geocodificacaoTentativasMax">
+          Tentativas máximas de geocodificação <span class="text-danger">*</span>
+        </label>
         <input
           id="geocodificacaoTentativasMax"
           class="form-control"
+          [class.is-invalid]="invalido('geocodificacaoTentativasMax')"
           type="number"
           formControlName="geocodificacaoTentativasMax"
         />
+        <app-campo-erro [control]="form.get('geocodificacaoTentativasMax')" />
       </div>
 
       <div class="mb-3">
-        <label class="form-label" for="cepCacheJanelaDias">Janela do cache de CEP (dias)</label>
-        <input id="cepCacheJanelaDias" class="form-control" type="number" formControlName="cepCacheJanelaDias" />
+        <label class="form-label" for="cepCacheJanelaDias">
+          Janela do cache de CEP (dias) <span class="text-danger">*</span>
+        </label>
+        <input
+          id="cepCacheJanelaDias"
+          class="form-control"
+          [class.is-invalid]="invalido('cepCacheJanelaDias')"
+          type="number"
+          formControlName="cepCacheJanelaDias"
+        />
+        <app-campo-erro [control]="form.get('cepCacheJanelaDias')" />
       </div>
 
       <div class="mb-3">
-        <label class="form-label" for="fusoHorario">Fuso horário</label>
-        <input id="fusoHorario" class="form-control" formControlName="fusoHorario" />
+        <label class="form-label" for="fusoHorario">Fuso horário <span class="text-danger">*</span></label>
+        <input
+          id="fusoHorario"
+          class="form-control"
+          [class.is-invalid]="invalido('fusoHorario')"
+          formControlName="fusoHorario"
+        />
+        <app-campo-erro [control]="form.get('fusoHorario')" />
       </div>
 
       <button class="btn btn-primary" type="submit" [disabled]="salvando()">Salvar</button>
