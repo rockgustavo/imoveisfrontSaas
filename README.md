@@ -93,6 +93,12 @@ O rótulo do resumo vem da tela, não do nome do control — `documento` aparece
 
 O texto é o mesmo dos dois lados ("Campo obrigatório"): o front tira de `mensagens-validacao.ts`, o backend de `ValidationMessages.properties`. O usuário não percebe qual das duas camadas barrou.
 
+### Sessão e autorização
+
+Papel checado no backend (`@PreAuthorize`, ver README do backend §7); o front só usa `keycloak.hasRealmRole(...)` para decidir o que **mostrar** (menu, botão), nunca como garantia de acesso — a API responde `403` de qualquer forma se o papel não bater.
+
+**Revogação de acesso.** Se o backend responder `403` com `codigo: ACESSO_REVOGADO` (RN-02-04: a pessoa foi inativada, mas o token ainda não expirou), o `auth.interceptor.ts` desloga automaticamente (`keycloak.logout()`) em vez de deixar a pessoa "logada" recebendo erro em toda ação. Único código de erro que o interceptor trata de forma especial — todo o resto vira `AppError` e quem decide o que fazer é a tela.
+
 ### Tema claro/escuro
 
 `data-bs-theme` no `<html>`, alternado por um serviço singleton com persistência em `localStorage`. Não depende só de `prefers-color-scheme` — a escolha explícita do usuário sobrevive ao reload e ganha da preferência do sistema.

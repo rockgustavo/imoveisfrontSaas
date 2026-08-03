@@ -51,6 +51,40 @@ describe('authInterceptor', () => {
     expect(requisicao.request.headers.has('Authorization')).toBe(false);
     requisicao.flush({});
   });
+
+  it('desloga automaticamente quando o backend responde ACESSO_REVOGADO', async () => {
+    const logout = vi.fn();
+    configurar({ authenticated: true, token: 'token-123', updateToken: vi.fn().mockResolvedValue(true), logout });
+
+    httpClient.get('/api/v1/pessoas').subscribe({ error: () => {} });
+    await aguardarMicrotasks();
+
+    httpTesting
+      .expectOne('/api/v1/pessoas')
+      .flush(
+        { status: 403, title: 'Forbidden', detail: 'Esta conta foi inativada', codigo: 'ACESSO_REVOGADO' },
+        { status: 403, statusText: 'Forbidden' }
+      );
+
+    expect(logout).toHaveBeenCalledWith({ redirectUri: window.location.origin });
+  });
+
+  it('não desloga para outros códigos de erro', async () => {
+    const logout = vi.fn();
+    configurar({ authenticated: true, token: 'token-123', updateToken: vi.fn().mockResolvedValue(true), logout });
+
+    httpClient.get('/api/v1/pessoas').subscribe({ error: () => {} });
+    await aguardarMicrotasks();
+
+    httpTesting
+      .expectOne('/api/v1/pessoas')
+      .flush(
+        { status: 403, title: 'Forbidden', detail: 'Sem papel suficiente', codigo: 'OUTRO_CODIGO' },
+        { status: 403, statusText: 'Forbidden' }
+      );
+
+    expect(logout).not.toHaveBeenCalled();
+  });
 });
 
 describe('paraAppError', () => {

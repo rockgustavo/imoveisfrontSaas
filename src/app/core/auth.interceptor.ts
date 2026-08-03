@@ -13,12 +13,20 @@ interface ProblemDetailBody {
   campos?: Record<string, string>;
 }
 
+const CODIGO_ACESSO_REVOGADO = 'ACESSO_REVOGADO';
+
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const keycloak = inject(Keycloak);
 
   return from(anexarToken(req, keycloak)).pipe(
     switchMap((requisicaoAutorizada) => next(requisicaoAutorizada)),
-    catchError((erro: unknown) => throwError(() => paraAppError(erro)))
+    catchError((erro: unknown) => {
+      const appError = paraAppError(erro);
+      if (appError.codigo === CODIGO_ACESSO_REVOGADO) {
+        keycloak.logout({ redirectUri: window.location.origin });
+      }
+      return throwError(() => appError);
+    })
   );
 };
 
