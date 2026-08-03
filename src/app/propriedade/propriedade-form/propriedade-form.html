@@ -1,0 +1,191 @@
+<a class="btn btn-link ps-0 mb-2" routerLink="/propriedades"><i class="bi bi-arrow-left me-1"></i>Voltar</a>
+
+<h1 class="page-title h4 mb-3">{{ modoEdicao ? 'Editar propriedade' : 'Nova propriedade' }}</h1>
+
+@if (erro()) {
+  <div class="alert alert-danger" role="alert">{{ erro()?.detail }}</div>
+}
+
+<app-resumo-validacao [campos]="pendencias()" />
+
+<div class="card mb-3">
+  <div class="card-body">
+    <form [formGroup]="form" (ngSubmit)="salvar()">
+      <div class="row g-3">
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="proprietarioId">Proprietário <span class="text-danger">*</span></label>
+          <select
+            id="proprietarioId"
+            class="form-select"
+            [class.is-invalid]="invalido('proprietarioId')"
+            formControlName="proprietarioId"
+          >
+            <option value="" disabled>Selecione</option>
+            @for (pessoa of proprietarios(); track pessoa.id) {
+              <option [value]="pessoa.id">{{ pessoa.nome }}</option>
+            }
+          </select>
+          <app-campo-erro [control]="form.get('proprietarioId')" />
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label" for="tipo">Tipo</label>
+          <select id="tipo" class="form-select" formControlName="tipo">
+            <option value="APARTAMENTO">Apartamento</option>
+            <option value="CASA">Casa</option>
+            <option value="TERRENO">Terreno</option>
+            <option value="COMERCIAL">Comercial</option>
+          </select>
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label" for="valorReferencia">Valor de referência <span class="text-danger">*</span></label>
+          <input
+            id="valorReferencia"
+            class="form-control"
+            [class.is-invalid]="invalido('valorReferencia')"
+            type="number"
+            step="0.01"
+            formControlName="valorReferencia"
+          />
+          <app-campo-erro [control]="form.get('valorReferencia')" />
+        </div>
+
+        <div class="col-4 col-md-3">
+          <label class="form-label" for="areaPrivativa">Área privativa (m²)</label>
+          <input
+            id="areaPrivativa"
+            class="form-control"
+            [class.is-invalid]="invalido('areaPrivativa')"
+            type="number"
+            step="0.01"
+            formControlName="areaPrivativa"
+          />
+          <app-campo-erro [control]="form.get('areaPrivativa')" />
+        </div>
+        <div class="col-4 col-md-2">
+          <label class="form-label" for="quartos">Quartos</label>
+          <input id="quartos" class="form-control" type="number" formControlName="quartos" />
+        </div>
+        <div class="col-4 col-md-2">
+          <label class="form-label" for="vagas">Vagas</label>
+          <input id="vagas" class="form-control" type="number" formControlName="vagas" />
+        </div>
+
+        <div class="col-12"><hr /></div>
+
+        <div class="col-6 col-md-3">
+          <label class="form-label" for="cep">CEP <span class="text-danger">*</span></label>
+          <div class="input-group">
+            <input
+              id="cep"
+              class="form-control"
+              [class.is-invalid]="invalido('cep')"
+              formControlName="cep"
+              placeholder="Só números"
+            />
+            <button class="btn btn-outline-secondary" type="button" [disabled]="consultandoCep()" (click)="buscarCep()">
+              <i class="bi bi-search"></i>
+            </button>
+          </div>
+          <app-campo-erro [control]="form.get('cep')" />
+          @if (cepNaoEncontrado()) {
+            <div class="form-text text-warning">CEP não encontrado — preencha o endereço manualmente.</div>
+          } @else if (enderecoValidado()) {
+            <div class="form-text text-success">
+              <i class="bi bi-check-circle me-1"></i>Endereço confirmado via CEP.
+            </div>
+          }
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label" for="numero">Número <span class="text-danger">*</span></label>
+          <input
+            id="numero"
+            class="form-control"
+            [class.is-invalid]="invalido('numero')"
+            formControlName="numero"
+            placeholder="Aceita S/N"
+          />
+          <app-campo-erro [control]="form.get('numero')" />
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="complemento">Complemento</label>
+          <input id="complemento" class="form-control" formControlName="complemento" />
+        </div>
+
+        <div class="col-12 col-md-5">
+          <label class="form-label" for="logradouro">Logradouro <span class="text-danger">*</span></label>
+          <input
+            id="logradouro"
+            class="form-control"
+            [class.is-invalid]="invalido('logradouro')"
+            formControlName="logradouro"
+          />
+          <app-campo-erro [control]="form.get('logradouro')" />
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label" for="bairro">Bairro <span class="text-danger">*</span></label>
+          <input id="bairro" class="form-control" [class.is-invalid]="invalido('bairro')" formControlName="bairro" />
+          <app-campo-erro [control]="form.get('bairro')" />
+        </div>
+        <div class="col-4 col-md-3">
+          <label class="form-label" for="localidade">Cidade <span class="text-danger">*</span></label>
+          <input
+            id="localidade"
+            class="form-control"
+            [class.is-invalid]="invalido('localidade')"
+            formControlName="localidade"
+          />
+          <app-campo-erro [control]="form.get('localidade')" />
+        </div>
+        <div class="col-2 col-md-1">
+          <label class="form-label" for="uf">UF <span class="text-danger">*</span></label>
+          <input id="uf" class="form-control" [class.is-invalid]="invalido('uf')" formControlName="uf" maxlength="2" />
+          <app-campo-erro [control]="form.get('uf')" />
+        </div>
+      </div>
+
+      <button class="btn btn-primary mt-3" type="submit" [disabled]="salvando() || carregando()">
+        {{ modoEdicao ? 'Salvar' : 'Cadastrar' }}
+      </button>
+    </form>
+  </div>
+</div>
+
+@if (modoEdicao && propriedade(); as propriedadeAtual) {
+  <div class="card">
+    <div class="card-body">
+      <h2 class="h6 mb-3">Situação</h2>
+
+      <div class="d-flex flex-wrap gap-2 mb-3">
+        <span class="badge bg-primary">{{ propriedadeAtual.situacao }}</span>
+        <span class="badge bg-secondary">
+          <i class="bi bi-geo-alt me-1"></i>Geolocalização: {{ propriedadeAtual.geoSituacao }}
+        </span>
+        @if (propriedadeAtual.latitude && propriedadeAtual.longitude) {
+          <span class="badge bg-light text-dark border">
+            {{ propriedadeAtual.latitude }}, {{ propriedadeAtual.longitude }}
+          </span>
+        }
+      </div>
+
+      <div class="d-flex flex-wrap gap-2">
+        @if (podeRetirar) {
+          <button class="btn btn-outline-danger btn-sm" type="button" (click)="retirar()">Retirar</button>
+        }
+        @if (podeReservar) {
+          <button class="btn btn-outline-primary btn-sm" type="button" (click)="reservar()">Reservar</button>
+        }
+        @if (podeDesfazerReserva) {
+          <button class="btn btn-outline-secondary btn-sm" type="button" (click)="desfazerReserva()">
+            Desfazer reserva
+          </button>
+        }
+        @if (podeVender) {
+          <button class="btn btn-success btn-sm" type="button" (click)="vender()">Marcar como vendida</button>
+        }
+        @if (!podeRetirar && !podeReservar && !podeDesfazerReserva && !podeVender) {
+          <span class="text-muted">Nenhuma transição disponível neste módulo para a situação atual.</span>
+        }
+      </div>
+    </div>
+  </div>
+}

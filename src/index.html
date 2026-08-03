@@ -2,7 +2,7 @@
 <html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
-    <title>Imobiliária</title>
+    <title>Work Station</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
@@ -25,16 +25,27 @@
         gap: 1.5rem;
         background: #22303a;
         color: #f1f5f9;
-        font-family: "Nunito Sans", system-ui, sans-serif;
+        font-family: 'Nunito Sans', system-ui, sans-serif;
       }
       .app-splash i {
         font-size: 3.5rem;
         color: #14b8a6;
       }
-      .app-splash__title {
-        font-size: 1.25rem;
-        font-weight: 700;
+      .app-splash__brand {
+        text-align: center;
+        line-height: 1.25;
+      }
+      .app-splash__brand-primary {
+        font-size: 1.5rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .app-splash__brand-secondary {
+        font-size: 0.95rem;
+        font-weight: 400;
         letter-spacing: 0.02em;
+        color: #9db4bf;
       }
       .app-splash__dots {
         display: flex;
@@ -71,7 +82,10 @@
     <app-root>
       <div class="app-splash">
         <i class="bi bi-building"></i>
-        <div class="app-splash__title">Imobiliária</div>
+        <div class="app-splash__brand">
+          <div class="app-splash__brand-primary">Work Station</div>
+          <div class="app-splash__brand-secondary">Controle Imobiliário</div>
+        </div>
         <div class="app-splash__dots"><span></span><span></span><span></span></div>
       </div>
     </app-root>

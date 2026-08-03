@@ -4,6 +4,24 @@ import { roleGuard } from './core/role.guard';
 
 export const routes: Routes = [
   {
+    path: 'propriedades',
+    loadComponent: () => import('./propriedade/propriedades-page/propriedades-page').then((m) => m.PropriedadesPage),
+    canActivate: [roleGuard],
+    data: { papel: ['USUARIO', 'ADMINISTRADOR'] }
+  },
+  {
+    path: 'propriedades/novo',
+    loadComponent: () => import('./propriedade/propriedade-form/propriedade-form').then((m) => m.PropriedadeForm),
+    canActivate: [roleGuard],
+    data: { papel: ['USUARIO', 'ADMINISTRADOR'] }
+  },
+  {
+    path: 'propriedades/:id',
+    loadComponent: () => import('./propriedade/propriedade-form/propriedade-form').then((m) => m.PropriedadeForm),
+    canActivate: [roleGuard],
+    data: { papel: ['USUARIO', 'ADMINISTRADOR'] }
+  },
+  {
     path: 'parametros',
     loadComponent: () => import('./imobiliaria/parametros/parametros-page').then((m) => m.ParametrosPage),
     canActivate: [roleGuard],

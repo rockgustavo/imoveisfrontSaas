@@ -9,11 +9,9 @@
   display: flex;
   align-items: center;
   gap: 0.65rem;
-  height: var(--topbar-height);
-  padding: 0 1.25rem;
+  min-height: var(--topbar-height);
+  padding: 0.5rem 1.25rem;
   color: var(--sidebar-brand);
-  font-weight: 700;
-  font-size: 1.05rem;
   white-space: nowrap;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 
@@ -22,6 +20,25 @@
     color: var(--sidebar-active);
     flex-shrink: 0;
   }
+}
+
+.sb-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.sb-brand-primary {
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.sb-brand-secondary {
+  font-weight: 400;
+  font-size: 0.72rem;
+  opacity: 0.75;
 }
 
 .sb-nav {
