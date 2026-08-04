@@ -1,0 +1,126 @@
+<a class="btn btn-link ps-0 mb-2" routerLink="/orcamentos"><i class="bi bi-arrow-left me-1"></i>Voltar</a>
+
+<h1 class="page-title h4 mb-3">{{ modoEdicao ? 'Orçamento' : 'Novo orçamento' }}</h1>
+
+@if (erro()) {
+  <div class="alert alert-danger" role="alert">{{ erro()?.detail }}</div>
+}
+
+<app-resumo-validacao [campos]="pendencias()" />
+
+<div class="card mb-3">
+  <div class="card-body">
+    <form [formGroup]="form" (ngSubmit)="salvar()">
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="pessoaId">Proprietário <span class="text-danger">*</span></label>
+          <select
+            id="pessoaId"
+            class="form-select"
+            [class.is-invalid]="invalido('pessoaId')"
+            formControlName="pessoaId"
+          >
+            <option value="" disabled>Selecione</option>
+            @for (pessoa of proprietarios(); track pessoa.id) {
+              <option [value]="pessoa.id">{{ pessoa.nome }}</option>
+            }
+          </select>
+          <app-campo-erro [control]="form.get('pessoaId')" />
+        </div>
+      </div>
+
+      <h2 class="h6">Itens</h2>
+      @for (item of itensArray.controls; track item; let i = $index) {
+        <div class="row g-2 align-items-start mb-2" [formGroup]="item">
+          <div class="col-12 col-md-5">
+            <select
+              class="form-select"
+              [class.is-invalid]="itemInvalido(i, 'propriedadeId')"
+              formControlName="propriedadeId"
+            >
+              <option value="" disabled>Selecione a propriedade</option>
+              @for (propriedade of propriedadesDisponiveis(); track propriedade.id) {
+                <option [value]="propriedade.id">
+                  {{ propriedade.logradouro }}, {{ propriedade.bairro }} — {{ propriedade.localidade }}/{{ propriedade.uf }}
+                </option>
+              }
+            </select>
+          </div>
+          <div class="col-5 col-md-3">
+            <input
+              class="form-control"
+              [class.is-invalid]="itemInvalido(i, 'comissaoPercentual')"
+              type="number"
+              step="0.01"
+              placeholder="Comissão %"
+              formControlName="comissaoPercentual"
+            />
+          </div>
+          <div class="col-5 col-md-3">
+            <input
+              class="form-control"
+              [class.is-invalid]="itemInvalido(i, 'valorPedido')"
+              type="number"
+              step="0.01"
+              placeholder="Valor pedido"
+              formControlName="valorPedido"
+            />
+          </div>
+          @if (podeEditarItens) {
+            <div class="col-2 col-md-1 d-grid">
+              <button
+                class="btn btn-outline-danger"
+                type="button"
+                aria-label="Remover item"
+                (click)="removerItem(i)"
+              >
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          }
+        </div>
+      }
+
+      @if (podeEditarItens) {
+        <button class="btn btn-outline-secondary btn-sm mt-1 mb-3" type="button" (click)="adicionarItem()">
+          <i class="bi bi-plus-lg me-1"></i>Adicionar item
+        </button>
+        <div>
+          <button class="btn btn-primary" type="submit" [disabled]="salvando() || carregando()">
+            {{ modoEdicao ? 'Salvar' : 'Cadastrar' }}
+          </button>
+        </div>
+      }
+    </form>
+  </div>
+</div>
+
+@if (modoEdicao && orcamento(); as orcamentoAtual) {
+  <div class="card">
+    <div class="card-body">
+      <h2 class="h6 mb-3">Status</h2>
+
+      <div class="d-flex flex-wrap gap-2 mb-3">
+        <span class="badge bg-primary">{{ orcamentoAtual.status }}</span>
+        <span class="badge bg-light text-dark border">Validade: {{ orcamentoAtual.validade }}</span>
+        <span class="badge bg-light text-dark border">Versão {{ orcamentoAtual.versao }}</span>
+        @if (orcamentoAtual.origemId) {
+          <span class="badge bg-secondary">Duplicado de outro orçamento</span>
+        }
+      </div>
+
+      <div class="d-flex flex-wrap gap-2">
+        @if (podeEnviar) {
+          <button class="btn btn-outline-primary btn-sm" type="button" (click)="enviar()">Enviar</button>
+        }
+        @if (podeAceitar) {
+          <button class="btn btn-success btn-sm" type="button" (click)="aceitar()">Aceitar</button>
+        }
+        @if (podeRecusar) {
+          <button class="btn btn-outline-danger btn-sm" type="button" (click)="recusar()">Recusar</button>
+        }
+        <button class="btn btn-outline-secondary btn-sm" type="button" (click)="duplicar()">Duplicar</button>
+      </div>
+    </div>
+  </div>
+}

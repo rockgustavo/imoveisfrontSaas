@@ -22,6 +22,24 @@ export const routes: Routes = [
     data: { papel: ['USUARIO', 'ADMINISTRADOR'] }
   },
   {
+    path: 'orcamentos',
+    loadComponent: () => import('./orcamento/orcamentos-page/orcamentos-page').then((m) => m.OrcamentosPage),
+    canActivate: [roleGuard],
+    data: { papel: ['USUARIO', 'ADMINISTRADOR'] }
+  },
+  {
+    path: 'orcamentos/novo',
+    loadComponent: () => import('./orcamento/orcamento-form/orcamento-form').then((m) => m.OrcamentoForm),
+    canActivate: [roleGuard],
+    data: { papel: ['USUARIO', 'ADMINISTRADOR'] }
+  },
+  {
+    path: 'orcamentos/:id',
+    loadComponent: () => import('./orcamento/orcamento-form/orcamento-form').then((m) => m.OrcamentoForm),
+    canActivate: [roleGuard],
+    data: { papel: ['USUARIO', 'ADMINISTRADOR'] }
+  },
+  {
     path: 'parametros',
     loadComponent: () => import('./imobiliaria/parametros/parametros-page').then((m) => m.ParametrosPage),
     canActivate: [roleGuard],
