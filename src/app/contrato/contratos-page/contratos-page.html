@@ -1,0 +1,83 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="page-title h4 mb-0">Contratos</h1>
+  @if (podeCriar) {
+    <a class="btn btn-primary btn-sm" routerLink="/contratos/novo">
+      <i class="bi bi-plus-lg me-1"></i>Novo contrato
+    </a>
+  }
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <form class="row g-2 align-items-end" [formGroup]="filtro" (ngSubmit)="buscar()">
+      <div class="col-6 col-md-3">
+        <label class="form-label" for="status">Status</label>
+        <select id="status" class="form-select" formControlName="status">
+          <option value="">Todos</option>
+          <option value="RASCUNHO">Rascunho</option>
+          <option value="ATIVO">Ativo</option>
+          <option value="ENCERRADO">Encerrado</option>
+          <option value="CANCELADO">Cancelado</option>
+          <option value="EXPIRADO">Expirado</option>
+        </select>
+      </div>
+      <div class="col-6 col-md-1 d-grid">
+        <button class="btn btn-outline-primary" type="submit" aria-label="Buscar">
+          <i class="bi bi-search"></i>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+@if (erro()) {
+  <div class="alert alert-danger" role="alert">{{ erro()?.detail }}</div>
+}
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead>
+        <tr>
+          <th>Status</th>
+          <th>Vigência</th>
+          <th>Propriedades</th>
+          <th>Valor total</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (contrato of contratos(); track contrato.id) {
+          <tr class="card-hover" role="button" [routerLink]="['/contratos', contrato.id]">
+            <td>
+              <span class="badge" [class]="classeBadgeStatus(contrato.status)">{{ contrato.status }}</span>
+            </td>
+            <td>{{ contrato.vigenciaInicio | date: 'dd/MM/yyyy' }} – {{ contrato.vigenciaFim | date: 'dd/MM/yyyy' }}</td>
+            <td>{{ contrato.quantidadeAgenciamentos }}</td>
+            <td>{{ contrato.valorTotal | currency: 'BRL' : 'symbol' : '1.2-2' }}</td>
+          </tr>
+        }
+        @if (!carregando() && contratos().length === 0) {
+          <tr>
+            <td colspan="4" class="text-center text-muted py-4">Nenhum contrato encontrado</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+@if (totalPaginas() > 1) {
+  <nav class="mt-3" aria-label="Paginação">
+    <ul class="pagination justify-content-center mb-0">
+      <li class="page-item" [class.disabled]="pagina() === 0">
+        <button class="page-link" (click)="irParaPagina(pagina() - 1)">Anterior</button>
+      </li>
+      <li class="page-item disabled">
+        <span class="page-link">{{ pagina() + 1 }} / {{ totalPaginas() }}</span>
+      </li>
+      <li class="page-item" [class.disabled]="pagina() + 1 >= totalPaginas()">
+        <button class="page-link" (click)="irParaPagina(pagina() + 1)">Próxima</button>
+      </li>
+    </ul>
+  </nav>
+}

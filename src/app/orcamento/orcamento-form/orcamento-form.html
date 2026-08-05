@@ -119,6 +119,15 @@
         @if (podeRecusar) {
           <button class="btn btn-outline-danger btn-sm" type="button" (click)="recusar()">Recusar</button>
         }
+        @if (podeConverterEmContrato) {
+          <a
+            class="btn btn-success btn-sm"
+            [routerLink]="['/contratos/novo']"
+            [queryParams]="{ orcamentoId: orcamentoAtual.id }"
+          >
+            Converter em contrato
+          </a>
+        }
         <button class="btn btn-outline-secondary btn-sm" type="button" (click)="duplicar()">Duplicar</button>
       </div>
     </div>

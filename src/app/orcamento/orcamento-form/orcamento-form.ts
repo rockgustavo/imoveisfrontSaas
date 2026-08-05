@@ -84,6 +84,10 @@ export class OrcamentoForm {
     return this.orcamento()?.status === 'ENVIADO';
   }
 
+  protected get podeConverterEmContrato(): boolean {
+    return this.orcamento()?.status === 'ACEITO';
+  }
+
   protected invalido(campo: string): boolean {
     return campoInvalido(this.form, campo);
   }

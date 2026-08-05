@@ -53,7 +53,10 @@ src/app/
 │   ├── validators/            validadores reaproveitáveis + erros vindos do backend
 │   └── components/            topbar, sidebar, bottom-nav, campo-erro, resumo-validacao
 ├── imobiliaria/              domínio — serviço HTTP, modelos, telas
-└── pessoa/                   domínio — cadastro, papéis e inativação
+├── pessoa/                   domínio — cadastro, papéis e inativação
+├── propriedade/              domínio — cadastro, mapa de situação, CEP
+├── orcamento/                domínio — proposta comercial que antecede o contrato
+└── contrato/                 domínio — ativação, encerramento, cancelamento, aditivos
 ```
 
 Pasta por domínio, não por tipo de arquivo: a tela, o serviço e o modelo de `imobiliaria` ficam juntos, do mesmo jeito que o módulo correspondente no backend. Domínio novo é pasta nova, não um arquivo a mais em cada uma de cinco pastas técnicas.
@@ -117,6 +120,8 @@ Authorization Code + PKCE contra o Keycloak, via `keycloak-angular`. O token fic
 npm test
 ```
 
-Cobrem a regra de negócio, com preferência por teste unitário: validadores de parâmetro, tradução de erro HTTP em `AppError` no interceptor, autorização por papel (único ou lista) no guard, e o comportamento dos formulários e telas de listagem — parâmetros do tenant e cadastro/papéis/inativação de pessoas.
+Cobrem a regra de negócio, com preferência por teste unitário: validadores de parâmetro, tradução de erro HTTP em `AppError` no interceptor, autorização por papel (único ou lista) no guard, e o comportamento dos formulários e telas de listagem de todos os domínios — tenant, pessoas, propriedades, orçamentos e contratos.
 
 Componentes de shell (topbar, sidebar, bottom-nav) e o serviço de tema não têm teste unitário de propósito — são casca de apresentação e manipulação de DOM, sem regra de negócio a proteger.
+
+**Reaproveitamento de rota do Angular pegou um bug real, só visível com navegador de verdade.** Navegar entre duas instâncias da mesma rota parametrizada (`/orcamentos/:id` → `/orcamentos/:outroId`, no fluxo de "duplicar") reaproveita a instância do componente — um formulário que só lê `route.snapshot.paramMap` no construtor mostra dados do orçamento antigo até um reload manual. Nenhum spec Vitest pegou isso (cada teste monta um `TestBed` novo, nunca reaproveitado); só apareceu testando com Playwright contra o app real. Corrigido assinando `route.paramMap` (Observable) em vez de ler o snapshot uma vez — `OrcamentoForm` e `ContratoForm` seguem esse padrão, com teste de regressão dedicado simulando a navegação via `Subject` de `paramMap`.

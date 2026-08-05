@@ -40,6 +40,24 @@ export const routes: Routes = [
     data: { papel: ['USUARIO', 'ADMINISTRADOR'] }
   },
   {
+    path: 'contratos',
+    loadComponent: () => import('./contrato/contratos-page/contratos-page').then((m) => m.ContratosPage),
+    canActivate: [roleGuard],
+    data: { papel: ['USUARIO', 'ADMINISTRADOR'] }
+  },
+  {
+    path: 'contratos/novo',
+    loadComponent: () => import('./contrato/contrato-form/contrato-form').then((m) => m.ContratoForm),
+    canActivate: [roleGuard],
+    data: { papel: ['USUARIO', 'ADMINISTRADOR'] }
+  },
+  {
+    path: 'contratos/:id',
+    loadComponent: () => import('./contrato/contrato-form/contrato-form').then((m) => m.ContratoForm),
+    canActivate: [roleGuard],
+    data: { papel: ['USUARIO', 'ADMINISTRADOR'] }
+  },
+  {
     path: 'parametros',
     loadComponent: () => import('./imobiliaria/parametros/parametros-page').then((m) => m.ParametrosPage),
     canActivate: [roleGuard],

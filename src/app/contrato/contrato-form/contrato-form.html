@@ -1,0 +1,245 @@
+<a class="btn btn-link ps-0 mb-2" routerLink="/contratos"><i class="bi bi-arrow-left me-1"></i>Voltar</a>
+
+<h1 class="page-title h4 mb-3">{{ modoDetalhe ? 'Contrato' : 'Novo contrato' }}</h1>
+
+@if (erro()) {
+  <div class="alert alert-danger" role="alert">{{ erro()?.detail }}</div>
+}
+
+<app-resumo-validacao [campos]="pendencias()" />
+
+@if (!modoDetalhe) {
+  <div class="card mb-3">
+    <div class="card-body">
+      <form [formGroup]="form" (ngSubmit)="salvar()">
+        <div class="row g-3 mb-3">
+          <div class="col-12 col-md-6">
+            <label class="form-label" for="orcamentoId">Orçamento aceito <span class="text-danger">*</span></label>
+            @if (orcamentoPreSelecionado) {
+              <input class="form-control" id="orcamentoId" [value]="form.controls.orcamentoId.value" disabled />
+            } @else {
+              <select
+                id="orcamentoId"
+                class="form-select"
+                [class.is-invalid]="invalido('orcamentoId')"
+                formControlName="orcamentoId"
+              >
+                <option value="" disabled>Selecione</option>
+                @for (orcamento of orcamentosAceitos(); track orcamento.id) {
+                  <option [value]="orcamento.id">
+                    {{ orcamento.id }} — {{ orcamento.quantidadeItens }} item(ns), {{ orcamento.valorTotal }}
+                  </option>
+                }
+              </select>
+            }
+            <app-campo-erro [control]="form.get('orcamentoId')" />
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-6 col-md-3">
+            <label class="form-label" for="vigenciaInicio">Início da vigência <span class="text-danger">*</span></label>
+            <input
+              id="vigenciaInicio"
+              class="form-control"
+              [class.is-invalid]="invalido('vigenciaInicio')"
+              type="date"
+              formControlName="vigenciaInicio"
+            />
+            <app-campo-erro [control]="form.get('vigenciaInicio')" />
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label" for="vigenciaFim">Fim da vigência <span class="text-danger">*</span></label>
+            <input
+              id="vigenciaFim"
+              class="form-control"
+              [class.is-invalid]="invalido('vigenciaFim')"
+              type="date"
+              formControlName="vigenciaFim"
+            />
+            <app-campo-erro [control]="form.get('vigenciaFim')" />
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="regrasContratuais">Regras contratuais <span class="text-danger">*</span></label>
+          <textarea
+            id="regrasContratuais"
+            class="form-control"
+            [class.is-invalid]="invalido('regrasContratuais')"
+            rows="4"
+            formControlName="regrasContratuais"
+          ></textarea>
+          <app-campo-erro [control]="form.get('regrasContratuais')" />
+        </div>
+
+        <button class="btn btn-primary" type="submit" [disabled]="salvando()">Cadastrar</button>
+      </form>
+    </div>
+  </div>
+}
+
+@if (modoDetalhe && contrato(); as contratoAtual) {
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="d-flex flex-wrap gap-2 mb-3">
+        <span class="badge bg-primary">{{ contratoAtual.status }}</span>
+        <span class="badge bg-light text-dark border">
+          Vigência: {{ contratoAtual.vigenciaInicio }} – {{ contratoAtual.vigenciaFim }}
+        </span>
+        @if (proprietario(); as pessoa) {
+          <span class="badge bg-light text-dark border">Proprietário: {{ pessoa.nome }}</span>
+        }
+        <a class="badge bg-secondary text-decoration-none" [routerLink]="['/orcamentos', contratoAtual.orcamentoOrigemId]">
+          Orçamento de origem
+        </a>
+      </div>
+
+      <p class="mb-3">{{ contratoAtual.regrasContratuais }}</p>
+
+      @if (contratoAtual.justificativaEncerramento) {
+        <p class="text-muted mb-3">
+          <strong>Justificativa do encerramento:</strong> {{ contratoAtual.justificativaEncerramento }}
+        </p>
+      }
+
+      <div class="d-flex flex-wrap gap-2">
+        @if (podeAtivar) {
+          <button class="btn btn-success btn-sm" type="button" (click)="ativar()">Ativar</button>
+        }
+        @if (podeEncerrar) {
+          <button class="btn btn-outline-dark btn-sm" type="button" (click)="encerrar()">Encerrar</button>
+        }
+        @if (podeCancelar) {
+          <button class="btn btn-outline-danger btn-sm" type="button" (click)="cancelar()">Cancelar</button>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <h2 class="h6 mb-3">Propriedades agenciadas</h2>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr>
+              <th>Propriedade</th>
+              <th>Comissão</th>
+              <th>Valor pedido</th>
+              <th>Ativo</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (agenciamento of contratoAtual.agenciamentos; track agenciamento.id) {
+              <tr>
+                <td>
+                  @if (propriedadesPorId()[agenciamento.propriedadeId]; as propriedade) {
+                    {{ propriedade.logradouro }}, {{ propriedade.bairro }} — {{ propriedade.localidade }}/{{ propriedade.uf }}
+                  } @else {
+                    {{ agenciamento.propriedadeId }}
+                  }
+                </td>
+                <td>{{ agenciamento.comissaoPercentual }}%</td>
+                <td>{{ agenciamento.valorPedido }}</td>
+                <td>
+                  <span class="badge" [class]="agenciamento.contratoAtivo ? 'bg-success' : 'bg-secondary'">
+                    {{ agenciamento.contratoAtivo ? 'sim' : 'não' }}
+                  </span>
+                </td>
+              </tr>
+            }
+            @if (contratoAtual.agenciamentos.length === 0) {
+              <tr>
+                <td colspan="4" class="text-center text-muted py-3">Nenhuma propriedade agenciada</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  @if (contratoAtual.aditivos.length > 0) {
+    <div class="card mb-3">
+      <div class="card-body">
+        <h2 class="h6 mb-3">Histórico de aditivos</h2>
+        <div class="table-responsive">
+          <table class="table mb-0">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Tipo</th>
+                <th>Propriedade</th>
+                <th>Justificativa</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (aditivo of contratoAtual.aditivos; track $index) {
+                <tr>
+                  <td>{{ aditivo.data }}</td>
+                  <td>
+                    <span class="badge" [class]="aditivo.tipo === 'INCLUSAO' ? 'bg-success' : 'bg-danger'">
+                      {{ aditivo.tipo }}
+                    </span>
+                  </td>
+                  <td>{{ propriedadesPorId()[aditivo.propriedadeId]?.logradouro ?? aditivo.propriedadeId }}</td>
+                  <td>{{ aditivo.justificativa }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (podeRegistrarAditivo) {
+    <div class="card">
+      <div class="card-body">
+        <h2 class="h6 mb-3">Registrar aditivo</h2>
+        @if (erroAditivo()) {
+          <div class="alert alert-danger" role="alert">{{ erroAditivo()?.detail }}</div>
+        }
+        <form [formGroup]="aditivoForm" (ngSubmit)="registrarAditivo()">
+          <div class="row g-3 align-items-end">
+            <div class="col-6 col-md-2">
+              <label class="form-label" for="aditivoTipo">Tipo</label>
+              <select id="aditivoTipo" class="form-select" formControlName="tipo">
+                <option value="INCLUSAO">Inclusão</option>
+                <option value="EXCLUSAO">Exclusão</option>
+              </select>
+            </div>
+            <div class="col-6 col-md-4">
+              <label class="form-label" for="aditivoPropriedadeId">Propriedade (id)</label>
+              <input id="aditivoPropriedadeId" class="form-control" formControlName="propriedadeId" />
+            </div>
+            @if (precisaDeComissaoEValor) {
+              <div class="col-6 col-md-2">
+                <label class="form-label" for="aditivoComissao">Comissão %</label>
+                <input
+                  id="aditivoComissao"
+                  class="form-control"
+                  type="number"
+                  step="0.01"
+                  formControlName="comissaoPercentual"
+                />
+              </div>
+              <div class="col-6 col-md-2">
+                <label class="form-label" for="aditivoValor">Valor pedido</label>
+                <input id="aditivoValor" class="form-control" type="number" step="0.01" formControlName="valorPedido" />
+              </div>
+            }
+            <div class="col-12">
+              <label class="form-label" for="aditivoJustificativa">Justificativa</label>
+              <input id="aditivoJustificativa" class="form-control" formControlName="justificativa" />
+            </div>
+            <div class="col-12">
+              <button class="btn btn-primary btn-sm" type="submit">Registrar</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+}
