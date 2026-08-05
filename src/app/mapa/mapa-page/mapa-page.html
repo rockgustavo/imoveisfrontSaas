@@ -1,0 +1,91 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="page-title h4 mb-0">Mapa</h1>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <form class="row g-2 align-items-end" [formGroup]="filtro" (ngSubmit)="buscar()">
+      <div class="col-6 col-md-2">
+        <label class="form-label" for="situacao">Situação</label>
+        <select id="situacao" class="form-select" formControlName="situacao">
+          <option value="">Padrão (Agenciada)</option>
+          <option value="DISPONIVEL">Disponível</option>
+          <option value="AGENCIADA">Agenciada</option>
+          <option value="RESERVADA">Reservada</option>
+          <option value="VENDIDA">Vendida</option>
+          <option value="RETIRADA">Retirada</option>
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label" for="statusContrato">Status do contrato</label>
+        <select id="statusContrato" class="form-select" formControlName="statusContrato">
+          <option value="">Todos</option>
+          <option value="RASCUNHO">Rascunho</option>
+          <option value="ATIVO">Ativo</option>
+          <option value="ENCERRADO">Encerrado</option>
+          <option value="CANCELADO">Cancelado</option>
+          <option value="EXPIRADO">Expirado</option>
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label" for="localidade">Cidade</label>
+        <input id="localidade" class="form-control" formControlName="localidade" />
+      </div>
+      <div class="col-6 col-md-1">
+        <label class="form-label" for="uf">UF</label>
+        <input id="uf" class="form-control" formControlName="uf" maxlength="2" />
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label" for="valorMin">Valor mín.</label>
+        <input id="valorMin" class="form-control" type="number" formControlName="valorMin" />
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label" for="valorMax">Valor máx.</label>
+        <input id="valorMax" class="form-control" type="number" formControlName="valorMax" />
+      </div>
+      <div class="col-8 col-md-2">
+        <label class="form-label" for="proprietarioId">ID do proprietário</label>
+        <input id="proprietarioId" class="form-control" formControlName="proprietarioId" />
+      </div>
+      <div class="col-4 col-md-1 d-grid">
+        <button class="btn btn-outline-primary" type="submit" aria-label="Buscar">
+          <i class="bi bi-search"></i>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+@if (erro()) {
+  <div class="alert alert-danger" role="alert">{{ erro()?.detail }}</div>
+}
+
+@if (limitado()) {
+  <div class="alert alert-warning" role="alert">
+    Mais de 500 propriedades nesta área — mostrando uma amostra. Aproxime o mapa ou refine os filtros para ver todas.
+  </div>
+}
+
+<div class="mapa-wrapper card">
+  <div #mapaContainer class="mapa-container"></div>
+
+  @if (carregando()) {
+    <div class="mapa-carregando">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Carregando…</span>
+      </div>
+    </div>
+  }
+
+  <div class="mapa-legenda card">
+    <div class="card-body py-2 px-3">
+      <div class="small text-muted mb-1">Situação</div>
+      @for (item of legenda; track item[0]) {
+        <div class="d-flex align-items-center gap-2 small">
+          <span class="mapa-legenda-cor" [style.background]="item[1]"></span>
+          {{ item[0] }}
+        </div>
+      }
+    </div>
+  </div>
+</div>

@@ -222,3 +222,20 @@ app-topbar.app-topbar {
     flex-shrink: 0;
   }
 }
+
+// Leaflet monta esses elementos via appendChild direto no DOM, fora do compilador de
+// templates do Angular — não recebem o atributo de ViewEncapsulation, então precisam
+// ficar aqui, não no .scss (com escopo de componente) da página do mapa.
+.mapa-marcador span {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.mapa-popup {
+  font-family: var(--bs-body-font-family);
+  line-height: 1.4;
+}

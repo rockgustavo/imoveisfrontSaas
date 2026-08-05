@@ -6,6 +6,7 @@
 ![Angular](https://img.shields.io/badge/Angular-21-DD0031?style=flat&logo=angular&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat&logo=typescript&logoColor=white)
 ![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-7952B3?style=flat&logo=bootstrap&logoColor=white)
+![Leaflet](https://img.shields.io/badge/Leaflet-1.9-199900?style=flat&logo=leaflet&logoColor=white)
 ![Vitest](https://img.shields.io/badge/Vitest-4-6E9F18?style=flat&logo=vitest&logoColor=white)
 
 ---
@@ -55,6 +56,7 @@ src/app/
 ├── imobiliaria/              domínio — serviço HTTP, modelos, telas
 ├── pessoa/                   domínio — cadastro, papéis e inativação
 ├── propriedade/              domínio — cadastro, mapa de situação, CEP
+├── mapa/                     domínio — visão geográfica agregada, sem entidade própria (Leaflet)
 ├── orcamento/                domínio — proposta comercial que antecede o contrato
 └── contrato/                 domínio — ativação, encerramento, cancelamento, aditivos
 ```
@@ -77,6 +79,19 @@ Pasta por domínio, não por tipo de arquivo: a tela, o serviço e o modelo de `
 Sidebar fixa colapsável (desktop) + topbar sticky + bottom nav (abaixo de 992px). Os três consomem a mesma fonte de navegação — [`shared/nav-items.ts`](src/app/shared/nav-items.ts) — então adicionar um item de menu é editar um array, não três templates.
 
 O layout parte do menor breakpoint e cresce, em vez de ser desktop adaptado depois: a bottom nav é o caminho de navegação padrão no celular, não uma sidebar espremida.
+
+### Mapa: Leaflet fora do fluxo padrão do Angular
+
+Primeira vez que o Leaflet (previsto desde o início) entra de fato no projeto — módulo `mapa/`, sem entidade própria; consome uma consulta agregada sobre `propriedade` que já existe no backend, sem módulo novo lá também (ver README do backend).
+
+| Decisão | Motivação |
+|---|---|
+| CSS do Leaflet no array `styles` do `angular.json`, não em `styleUrl` de componente | Leaflet cria marcador e popup via `appendChild` direto no DOM, fora do compilador de template do Angular — esses elementos não recebem o atributo de `ViewEncapsulation.Emulated`, então CSS "scoped" no componente nunca casaria com eles |
+| Marcador via `L.divIcon` colorido, não o ícone PNG default do Leaflet | O ícone padrão quebra sob o bundler do Angular CLI (caminho relativo de asset não resolvido pelo esbuild) — resolve o asset quebrado e entrega a cor por situação (legenda obrigatória, RN-07-05) na mesma solução, sem depender de imagem |
+| `leaflet`/`leaflet.markercluster` em `allowedCommonJsDependencies` (`angular.json`) | As duas bibliotecas são UMD/CommonJS, não ESM — sem o allowlist, o build de produção falha com warning de "optimization bailout"; declarar a exceção conhecida é mais barato que abrir mão de otimização |
+| Refetch no evento `moveend`, sem debounce adicional | `moveend` só dispara quando o usuário termina de arrastar ou dar zoom — um debounce em cima seria redundância sem ganho |
+
+Clustering (`leaflet.markercluster`) agrupa marcadores próximos em qualquer zoom onde colidiriam visualmente — independente do teto de 500 do backend (`limitado: true`, ver README do backend). São dois mecanismos com propósitos diferentes: um é sempre visual, o outro é um limite de payload.
 
 ### Validação em duas camadas
 
@@ -123,5 +138,7 @@ npm test
 Cobrem a regra de negócio, com preferência por teste unitário: validadores de parâmetro, tradução de erro HTTP em `AppError` no interceptor, autorização por papel (único ou lista) no guard, e o comportamento dos formulários e telas de listagem de todos os domínios — tenant, pessoas, propriedades, orçamentos e contratos.
 
 Componentes de shell (topbar, sidebar, bottom-nav) e o serviço de tema não têm teste unitário de propósito — são casca de apresentação e manipulação de DOM, sem regra de negócio a proteger.
+
+`MapaPage` não instancia o mapa Leaflet real no spec: jsdom não tem motor de layout, e um `L.Map` de verdade contra um container sem dimensões é frágil por natureza, não pela lógica que estaria sendo testada. Os testes cobrem a lógica pura do componente (filtro do formulário → `MapaFiltro`, cor por situação, conteúdo do popup) chamando os métodos diretamente, sem `fixture.detectChanges()` — isso nunca dispara `ngAfterViewInit`, então o Leaflet nunca entra em cena. O mapa, o clustering e o popup reais foram verificados com Playwright contra o app rodando de verdade.
 
 **Reaproveitamento de rota do Angular pegou um bug real, só visível com navegador de verdade.** Navegar entre duas instâncias da mesma rota parametrizada (`/orcamentos/:id` → `/orcamentos/:outroId`, no fluxo de "duplicar") reaproveita a instância do componente — um formulário que só lê `route.snapshot.paramMap` no construtor mostra dados do orçamento antigo até um reload manual. Nenhum spec Vitest pegou isso (cada teste monta um `TestBed` novo, nunca reaproveitado); só apareceu testando com Playwright contra o app real. Corrigido assinando `route.paramMap` (Observable) em vez de ler o snapshot uma vez — `OrcamentoForm` e `ContratoForm` seguem esse padrão, com teste de regressão dedicado simulando a navegação via `Subject` de `paramMap`.

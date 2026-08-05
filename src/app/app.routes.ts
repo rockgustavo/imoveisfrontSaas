@@ -22,6 +22,12 @@ export const routes: Routes = [
     data: { papel: ['USUARIO', 'ADMINISTRADOR'] }
   },
   {
+    path: 'mapa',
+    loadComponent: () => import('./mapa/mapa-page/mapa-page').then((m) => m.MapaPage),
+    canActivate: [roleGuard],
+    data: { papel: ['USUARIO', 'ADMINISTRADOR'] }
+  },
+  {
     path: 'orcamentos',
     loadComponent: () => import('./orcamento/orcamentos-page/orcamentos-page').then((m) => m.OrcamentosPage),
     canActivate: [roleGuard],
