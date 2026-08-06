@@ -16,8 +16,8 @@ export class MapaService {
 
   private paraParams(bbox: BoundingBox, filtro: MapaFiltro): HttpParams {
     let params = new HttpParams().set('bbox', `${bbox.minLat},${bbox.minLon},${bbox.maxLat},${bbox.maxLon}`);
-    if (filtro.situacao) {
-      params = params.set('situacao', filtro.situacao);
+    for (const situacao of filtro.situacao ?? []) {
+      params = params.append('situacao', situacao);
     }
     if (filtro.statusContrato) {
       params = params.set('statusContrato', filtro.statusContrato);

@@ -4,6 +4,12 @@ import { roleGuard } from './core/role.guard';
 
 export const routes: Routes = [
   {
+    path: 'painel',
+    loadComponent: () => import('./painel/painel-page/painel-page').then((m) => m.PainelPage),
+    canActivate: [roleGuard],
+    data: { papel: ['USUARIO', 'ADMINISTRADOR'] }
+  },
+  {
     path: 'propriedades',
     loadComponent: () => import('./propriedade/propriedades-page/propriedades-page').then((m) => m.PropriedadesPage),
     canActivate: [roleGuard],
@@ -87,5 +93,5 @@ export const routes: Routes = [
     canActivate: [roleGuard],
     data: { papel: ['USUARIO', 'ADMINISTRADOR'] }
   },
-  { path: '', redirectTo: 'pessoas', pathMatch: 'full' }
+  { path: '', redirectTo: 'painel', pathMatch: 'full' }
 ];

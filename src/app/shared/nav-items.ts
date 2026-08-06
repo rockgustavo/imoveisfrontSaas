@@ -5,6 +5,7 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: NavItem[] = [
+  { label: 'Painel', icon: 'bi-speedometer2', route: '/painel' },
   { label: 'Propriedades', icon: 'bi-house-door', route: '/propriedades' },
   { label: 'Mapa', icon: 'bi-map', route: '/mapa' },
   { label: 'Orçamentos', icon: 'bi-file-earmark-text', route: '/orcamentos' },

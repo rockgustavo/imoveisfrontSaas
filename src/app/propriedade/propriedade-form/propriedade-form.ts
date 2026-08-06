@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import Keycloak from 'keycloak-js';
+import { merge } from 'rxjs';
 
 import { AppError } from '../../core/app-error.model';
 import { Pessoa } from '../../pessoa/pessoa.model';
@@ -16,7 +17,12 @@ import {
 } from '../../shared/validators/erros-do-servidor';
 import { maiorQueZero } from '../../shared/validators/maior-que-zero.validator';
 import { CepService } from '../cep.service';
-import { Propriedade, SalvarPropriedadeComando, TipoPropriedade } from '../propriedade.model';
+import {
+  Propriedade,
+  ResultadoPesquisaGeolocalizacao,
+  SalvarPropriedadeComando,
+  TipoPropriedade
+} from '../propriedade.model';
 import { PropriedadeService } from '../propriedade.service';
 
 const ROTULOS: Record<string, string> = {
@@ -59,6 +65,8 @@ export class PropriedadeForm {
   protected readonly enderecoValidado = signal(false);
   protected readonly consultandoCep = signal(false);
   protected readonly cepNaoEncontrado = signal(false);
+  protected readonly pesquisandoGeolocalizacao = signal(false);
+  protected readonly resultadoGeolocalizacao = signal<ResultadoPesquisaGeolocalizacao | null>(null);
 
   protected readonly form = new FormGroup({
     proprietarioId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
@@ -110,6 +118,15 @@ export class PropriedadeForm {
       this.propriedadeId.set(id);
       this.carregarPropriedade(id);
     }
+
+    merge(
+      this.form.controls.cep.valueChanges,
+      this.form.controls.logradouro.valueChanges,
+      this.form.controls.numero.valueChanges,
+      this.form.controls.bairro.valueChanges,
+      this.form.controls.localidade.valueChanges,
+      this.form.controls.uf.valueChanges
+    ).subscribe(() => this.resultadoGeolocalizacao.set(null));
   }
 
   protected buscarCep(): void {
@@ -144,6 +161,36 @@ export class PropriedadeForm {
     });
   }
 
+  protected buscarLocalizacao(): void {
+    const valores = this.form.getRawValue();
+    if (!valores.cep || !valores.logradouro || !valores.numero || !valores.localidade || !valores.uf) {
+      return;
+    }
+
+    this.pesquisandoGeolocalizacao.set(true);
+    this.resultadoGeolocalizacao.set(null);
+
+    this.service
+      .pesquisarGeolocalizacao({
+        cep: valores.cep,
+        logradouro: valores.logradouro,
+        numero: valores.numero,
+        bairro: valores.bairro,
+        localidade: valores.localidade,
+        uf: valores.uf
+      })
+      .subscribe({
+        next: (resultado) => {
+          this.resultadoGeolocalizacao.set(resultado);
+          this.pesquisandoGeolocalizacao.set(false);
+        },
+        error: (erro: AppError) => {
+          this.erro.set(erro);
+          this.pesquisandoGeolocalizacao.set(false);
+        }
+      });
+  }
+
   protected salvar(): void {
     limparErrosDoServidor(this.form);
     if (this.form.invalid) {
@@ -161,6 +208,7 @@ export class PropriedadeForm {
       this.service.atualizar(this.propriedadeId()!, comando).subscribe({
         next: (propriedade) => {
           this.propriedade.set(propriedade);
+          this.resultadoGeolocalizacao.set(null);
           this.salvando.set(false);
         },
         error: (erro: AppError) => this.tratarErro(erro)
@@ -259,6 +307,7 @@ export class PropriedadeForm {
 
   private paraComando(): SalvarPropriedadeComando {
     const valores = this.form.getRawValue();
+    const resultado = this.resultadoGeolocalizacao();
     return {
       proprietarioId: valores.proprietarioId,
       tipo: valores.tipo,
@@ -273,7 +322,9 @@ export class PropriedadeForm {
       bairro: valores.bairro,
       localidade: valores.localidade,
       uf: valores.uf,
-      enderecoValidado: this.enderecoValidado()
+      enderecoValidado: this.enderecoValidado(),
+      latitude: resultado?.encontrada ? (resultado.latitude ?? undefined) : undefined,
+      longitude: resultado?.encontrada ? (resultado.longitude ?? undefined) : undefined
     };
   }
 }

@@ -30,13 +30,16 @@ const propriedadeExemplo: MapaPropriedade = {
 };
 
 describe('MapaPage', () => {
-  it('converte o formulário vazio em filtro sem nenhum campo definido', () => {
+  it('por padrão, começa com todas as situações selecionadas', () => {
     const { component } = configurar();
 
-    const filtro = component['paraFiltro']();
+    expect(component['situacoesSelecionadas']()).toEqual(
+      new Set(['DISPONIVEL', 'AGENCIADA', 'RESERVADA', 'VENDIDA', 'RETIRADA'])
+    );
 
+    const filtro = component['paraFiltro']();
     expect(filtro).toEqual({
-      situacao: undefined,
+      situacao: ['DISPONIVEL', 'AGENCIADA', 'RESERVADA', 'VENDIDA', 'RETIRADA'],
       statusContrato: undefined,
       localidade: undefined,
       uf: undefined,
@@ -49,11 +52,35 @@ describe('MapaPage', () => {
   it('converte apenas os campos preenchidos do formulário', () => {
     const { component } = configurar();
 
-    component['filtro'].patchValue({ situacao: 'RESERVADA', statusContrato: 'CANCELADO', uf: 'RJ', valorMin: 100000 });
+    component['filtro'].patchValue({ statusContrato: 'CANCELADO', uf: 'RJ', valorMin: 100000 });
+    component['alternarTodasAsSituacoes'](); // limpa a seleção padrão (todas)
+    component['alternarSituacao']('RESERVADA');
 
     expect(component['paraFiltro']()).toEqual(
-      expect.objectContaining({ situacao: 'RESERVADA', statusContrato: 'CANCELADO', uf: 'RJ', valorMin: 100000 })
+      expect.objectContaining({ situacao: ['RESERVADA'], statusContrato: 'CANCELADO', uf: 'RJ', valorMin: 100000 })
     );
+  });
+
+  it('situação: alterna a seleção, individualmente e via "Todas"', () => {
+    const { component } = configurar();
+
+    component['alternarTodasAsSituacoes'](); // parte de "todas" para "nenhuma"
+    expect(component['situacoesSelecionadas']()).toEqual(new Set());
+
+    component['alternarSituacao']('DISPONIVEL');
+    component['alternarSituacao']('AGENCIADA');
+    expect(component['situacoesSelecionadas']()).toEqual(new Set(['DISPONIVEL', 'AGENCIADA']));
+
+    component['alternarSituacao']('DISPONIVEL');
+    expect(component['situacoesSelecionadas']()).toEqual(new Set(['AGENCIADA']));
+
+    component['alternarTodasAsSituacoes']();
+    expect(component['situacoesSelecionadas']()).toEqual(
+      new Set(['DISPONIVEL', 'AGENCIADA', 'RESERVADA', 'VENDIDA', 'RETIRADA'])
+    );
+
+    component['alternarTodasAsSituacoes']();
+    expect(component['situacoesSelecionadas']()).toEqual(new Set());
   });
 
   it('RN-07-05: expõe uma cor de legenda para cada situação de propriedade', () => {
@@ -88,5 +115,14 @@ describe('MapaPage', () => {
     const html = component['popupHtml']({ ...propriedadeExemplo, statusContrato: null });
 
     expect(html).not.toContain('Contrato:');
+  });
+
+  it('inclui um botão para ir até o imóvel no popup', () => {
+    const { component } = configurar();
+
+    const html = component['popupHtml'](propriedadeExemplo);
+
+    expect(html).toContain('data-ver-imovel');
+    expect(html).toContain('Ver imóvel');
   });
 });

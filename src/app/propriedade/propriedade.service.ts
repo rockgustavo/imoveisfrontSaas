@@ -4,7 +4,14 @@ import { Observable, map } from 'rxjs';
 
 import { API_BASE_URL } from '../core/api.config';
 import { PageResponse } from '../shared/page-response.model';
-import { Propriedade, PropriedadeFiltro, PropriedadeResumo, SalvarPropriedadeComando } from './propriedade.model';
+import {
+  EnderecoParaGeolocalizacao,
+  Propriedade,
+  PropriedadeFiltro,
+  PropriedadeResumo,
+  ResultadoPesquisaGeolocalizacao,
+  SalvarPropriedadeComando
+} from './propriedade.model';
 
 @Injectable({ providedIn: 'root' })
 export class PropriedadeService {
@@ -45,6 +52,13 @@ export class PropriedadeService {
 
   vender(id: string): Observable<Propriedade> {
     return this.http.post<Propriedade>(`${this.propriedadesUrl}/${id}/venda`, {});
+  }
+
+  pesquisarGeolocalizacao(endereco: EnderecoParaGeolocalizacao): Observable<ResultadoPesquisaGeolocalizacao> {
+    return this.http.post<ResultadoPesquisaGeolocalizacao>(
+      `${this.propriedadesUrl}/geolocalizacao/pesquisar`,
+      endereco
+    );
   }
 
   private paraParams(filtro: PropriedadeFiltro, page: number, size: number): HttpParams {

@@ -57,6 +57,7 @@ src/app/
 ├── pessoa/                   domínio — cadastro, papéis e inativação
 ├── propriedade/              domínio — cadastro, mapa de situação, CEP
 ├── mapa/                     domínio — visão geográfica agregada, sem entidade própria (Leaflet)
+├── painel/                   domínio — indicadores operacionais, tela inicial (embute o mapa)
 ├── orcamento/                domínio — proposta comercial que antecede o contrato
 └── contrato/                 domínio — ativação, encerramento, cancelamento, aditivos
 ```
@@ -87,11 +88,24 @@ Primeira vez que o Leaflet (previsto desde o início) entra de fato no projeto �
 | Decisão | Motivação |
 |---|---|
 | CSS do Leaflet no array `styles` do `angular.json`, não em `styleUrl` de componente | Leaflet cria marcador e popup via `appendChild` direto no DOM, fora do compilador de template do Angular — esses elementos não recebem o atributo de `ViewEncapsulation.Emulated`, então CSS "scoped" no componente nunca casaria com eles |
-| Marcador via `L.divIcon` colorido, não o ícone PNG default do Leaflet | O ícone padrão quebra sob o bundler do Angular CLI (caminho relativo de asset não resolvido pelo esbuild) — resolve o asset quebrado e entrega a cor por situação (legenda obrigatória, RN-07-05) na mesma solução, sem depender de imagem |
+| Marcador via `L.divIcon` com SVG em forma de pin, não o ícone PNG default do Leaflet | O ícone padrão quebra sob o bundler do Angular CLI (caminho relativo de asset não resolvido pelo esbuild) — resolve o asset quebrado e entrega forma de pin + cor por situação (legenda obrigatória, RN-07-05) na mesma solução, sem depender de imagem |
 | `leaflet`/`leaflet.markercluster` em `allowedCommonJsDependencies` (`angular.json`) | As duas bibliotecas são UMD/CommonJS, não ESM — sem o allowlist, o build de produção falha com warning de "optimization bailout"; declarar a exceção conhecida é mais barato que abrir mão de otimização |
 | Refetch no evento `moveend`, sem debounce adicional | `moveend` só dispara quando o usuário termina de arrastar ou dar zoom — um debounce em cima seria redundância sem ganho |
+| Filtro de situação: checkboxes (`signal<Set>`), não `<select>` único | O backend aceita `situacao` repetível desde que o filtro virou multi-seleção — um `<select>` só permite uma escolha por vez. Estado fora do `FormGroup` porque não precisa de validação, só de um `Set` que o botão "Todas" alterna inteiro |
+| Tela abre com as 5 situações já marcadas, não vazia | O default de RN-07-03 (só `AGENCIADA`) vale para quem chama a API direto sem enviar `situacao` — a tela sempre envia a lista explícita, então quem abre o mapa vê o portfólio inteiro de cara, sem precisar aprender que existe um botão "Todas" primeiro |
+| Aviso na ficha do imóvel (`propriedade-form`) quando `geoSituacao !== 'CONCLUIDA'` | RN-07-01 exclui do mapa qualquer imóvel não geocodificado — sem o aviso, a ausência do pin parece bug do mapa, não característica do cadastro (endereço não resolvido automaticamente, ou geocodificação ainda em andamento) |
+| Botão "Ver imóvel" no popup navega via `Router` injetado, ligado no evento `popupopen` do Leaflet (não `(click)` do Angular) | O HTML do popup é string crua, fora do compilador de template — não existe binding Angular para amarrar. O `click` funciona porque a zona do Angular intercepta `addEventListener` nativo; `ngZone.run(...)` em volta da navegação garante a detecção de mudança mesmo se o registro tivesse ocorrido fora da zona |
 
 Clustering (`leaflet.markercluster`) agrupa marcadores próximos em qualquer zoom onde colidiriam visualmente — independente do teto de 500 do backend (`limitado: true`, ver README do backend). São dois mecanismos com propósitos diferentes: um é sempre visual, o outro é um limite de payload.
+
+### Painel: tela inicial, mapa como item principal
+
+`painel/` é a rota `''` (landing page, antes `pessoas`) — reúne os indicadores do backend (contratos ativos, vencendo em 30 dias, orçamentos aguardando resposta, comissão **projetada** com rótulo explícito, funil comercial) numa faixa de cards e embute `<app-mapa-page>` diretamente abaixo, ocupando a maior parte da tela.
+
+| Decisão | Motivação |
+|---|---|
+| `PainelPage` importa e renderiza `MapaPage` como componente filho, em vez de um "mini-mapa" próprio | O mapa já resolve filtro, legenda, clustering e o pin/popup novos — duplicar isso num componente reduzido só para o painel seria o mesmo Leaflet, código a mais para manter em dois lugares |
+| Card de comissão traz o texto "Projeção" ao lado do valor | O campo já se chama `comissaoProjetada` na API (RN-08-03: não é receita realizada), mas o rótulo não pode depender de quem lê o nome do campo — a tela repete o aviso |
 
 ### Validação em duas camadas
 

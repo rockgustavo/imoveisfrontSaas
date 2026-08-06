@@ -167,6 +167,39 @@
         }
       </div>
 
+      @if (propriedadeAtual.geoSituacao !== 'CONCLUIDA') {
+        <div class="alert alert-warning py-2 small d-flex align-items-start gap-2" role="alert">
+          <i class="bi bi-exclamation-triangle-fill mt-1"></i>
+          <div class="flex-grow-1">
+            @if (resultadoGeolocalizacao(); as resultado) {
+              @if (resultado.encontrada) {
+                <strong>Localização encontrada</strong> — clique em Salvar para atualizar a geolocalização deste
+                imóvel.
+              } @else {
+                Localização não encontrada para este endereço.
+              }
+            } @else if (propriedadeAtual.geoSituacao === 'MANUAL') {
+              Geolocalização não encontrada automaticamente pelo endereço cadastrado — este imóvel
+              <strong>não aparece no mapa</strong>. Use "Buscar localização" para tentar corrigir manualmente.
+            } @else {
+              Geolocalização ainda pendente — este imóvel <strong>não aparece no mapa</strong> enquanto o
+              endereço não for confirmado.
+            }
+            <div class="mt-2">
+              <button
+                class="btn btn-sm btn-outline-secondary"
+                type="button"
+                [disabled]="pesquisandoGeolocalizacao()"
+                (click)="buscarLocalizacao()"
+              >
+                <i class="bi bi-geo-alt me-1"></i>
+                {{ pesquisandoGeolocalizacao() ? 'Buscando...' : 'Buscar localização' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
       <div class="d-flex flex-wrap gap-2">
         @if (podeRetirar) {
           <button class="btn btn-outline-danger btn-sm" type="button" (click)="retirar()">Retirar</button>

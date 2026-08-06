@@ -28,7 +28,7 @@ export interface MapaResposta {
 }
 
 export interface MapaFiltro {
-  situacao?: SituacaoPropriedade;
+  situacao?: SituacaoPropriedade[];
   statusContrato?: StatusContrato;
   valorMin?: number;
   valorMax?: number;

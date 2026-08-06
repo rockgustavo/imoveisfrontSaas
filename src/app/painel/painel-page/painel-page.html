@@ -1,0 +1,83 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="page-title h4 mb-0">Painel</h1>
+</div>
+
+@if (erro()) {
+  <div class="alert alert-danger" role="alert">{{ erro()?.detail }}</div>
+}
+
+@if (indicadores(); as dados) {
+  <div class="row g-2 mb-3">
+    <div class="col-6 col-lg-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <div class="small text-muted">Contratos ativos</div>
+          <div class="fs-4 fw-semibold">{{ dados.contratosAtivos }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <div class="small text-muted">Vencendo em 30 dias</div>
+          <div class="fs-4 fw-semibold">{{ dados.contratosVencendoEm30Dias }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <div class="small text-muted">Orçamentos aguardando resposta</div>
+          <div class="fs-4 fw-semibold">{{ dados.orcamentosAguardandoResposta }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <div class="small text-muted d-flex align-items-center gap-1">
+            Comissão
+            <span class="badge text-bg-info-subtle text-info-emphasis">Projeção</span>
+          </div>
+          <div class="fs-4 fw-semibold">
+            {{ dados.comissaoProjetada | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="small text-muted mb-2">Funil comercial</div>
+      <div class="row g-2 text-center">
+        <div class="col-3">
+          <div class="fw-semibold">{{ dados.funil.lead }}</div>
+          <div class="small text-muted">Lead</div>
+        </div>
+        <div class="col-3">
+          <div class="fw-semibold">{{ dados.funil.prospect }}</div>
+          <div class="small text-muted">Prospect</div>
+        </div>
+        <div class="col-3">
+          <div class="fw-semibold">{{ dados.funil.cliente }}</div>
+          <div class="small text-muted">Cliente</div>
+        </div>
+        <div class="col-3">
+          <div class="fw-semibold">{{ dados.funil.clienteInativo }}</div>
+          <div class="small text-muted">Cliente inativo</div>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+@if (carregando() && !indicadores()) {
+  <div class="d-flex justify-content-center my-4">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Carregando…</span>
+    </div>
+  </div>
+}
+
+<app-mapa-page />

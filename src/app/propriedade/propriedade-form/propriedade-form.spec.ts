@@ -56,7 +56,8 @@ function configurar(id: string | null) {
     retirar: vi.fn().mockReturnValue(of({ ...propriedadeExemplo, situacao: 'RETIRADA' })),
     reservar: vi.fn().mockReturnValue(of({ ...propriedadeExemplo, situacao: 'RESERVADA' })),
     desfazerReserva: vi.fn().mockReturnValue(of({ ...propriedadeExemplo, situacao: 'AGENCIADA' })),
-    vender: vi.fn().mockReturnValue(of({ ...propriedadeExemplo, situacao: 'VENDIDA' }))
+    vender: vi.fn().mockReturnValue(of({ ...propriedadeExemplo, situacao: 'VENDIDA' })),
+    pesquisarGeolocalizacao: vi.fn().mockReturnValue(of({ encontrada: false, latitude: null, longitude: null }))
   };
   const cepService = { consultar: vi.fn() };
   const pessoaService = {
@@ -275,5 +276,67 @@ describe('PropriedadeForm — modo edição', () => {
     expect(component['propriedade']()?.situacao).toBe('VENDIDA');
 
     vi.unstubAllGlobals();
+  });
+
+  it('busca a localização com o endereço do formulário e guarda o resultado quando encontrada', () => {
+    const { component, service } = configurar(propriedadeExemplo.id);
+    service.pesquisarGeolocalizacao.mockReturnValue(of({ encontrada: true, latitude: -23.56, longitude: -46.65 }));
+
+    component['buscarLocalizacao']();
+
+    expect(service.pesquisarGeolocalizacao).toHaveBeenCalledWith({
+      cep: '01310100',
+      logradouro: 'Av. Paulista',
+      numero: '1000',
+      bairro: 'Bela Vista',
+      localidade: 'São Paulo',
+      uf: 'SP'
+    });
+    expect(component['resultadoGeolocalizacao']()).toEqual({ encontrada: true, latitude: -23.56, longitude: -46.65 });
+    expect(component['pesquisandoGeolocalizacao']()).toBe(false);
+  });
+
+  it('guarda encontrada=false quando a busca não encontra a localização', () => {
+    const { component, service } = configurar(propriedadeExemplo.id);
+    service.pesquisarGeolocalizacao.mockReturnValue(of({ encontrada: false, latitude: null, longitude: null }));
+
+    component['buscarLocalizacao']();
+
+    expect(component['resultadoGeolocalizacao']()).toEqual({ encontrada: false, latitude: null, longitude: null });
+  });
+
+  it('inclui latitude/longitude no comando ao salvar quando a busca encontrou coordenada', () => {
+    const { component, service } = configurar(propriedadeExemplo.id);
+    service.pesquisarGeolocalizacao.mockReturnValue(of({ encontrada: true, latitude: -23.56, longitude: -46.65 }));
+    component['buscarLocalizacao']();
+
+    component['salvar']();
+
+    expect(service.atualizar).toHaveBeenCalledWith(
+      propriedadeExemplo.id,
+      expect.objectContaining({ latitude: -23.56, longitude: -46.65 })
+    );
+  });
+
+  it('não inclui latitude/longitude no comando quando nenhuma busca foi feita', () => {
+    const { component, service } = configurar(propriedadeExemplo.id);
+
+    component['salvar']();
+
+    expect(service.atualizar).toHaveBeenCalledWith(
+      propriedadeExemplo.id,
+      expect.objectContaining({ latitude: undefined, longitude: undefined })
+    );
+  });
+
+  it('limpa o resultado da busca quando o endereço é editado de novo', () => {
+    const { component, service } = configurar(propriedadeExemplo.id);
+    service.pesquisarGeolocalizacao.mockReturnValue(of({ encontrada: true, latitude: -23.56, longitude: -46.65 }));
+    component['buscarLocalizacao']();
+    expect(component['resultadoGeolocalizacao']()).not.toBeNull();
+
+    component['form'].controls.numero.setValue('2000');
+
+    expect(component['resultadoGeolocalizacao']()).toBeNull();
   });
 });

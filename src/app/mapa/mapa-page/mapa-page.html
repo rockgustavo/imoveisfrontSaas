@@ -5,16 +5,28 @@
 <div class="card mb-3">
   <div class="card-body">
     <form class="row g-2 align-items-end" [formGroup]="filtro" (ngSubmit)="buscar()">
-      <div class="col-6 col-md-2">
-        <label class="form-label" for="situacao">Situação</label>
-        <select id="situacao" class="form-select" formControlName="situacao">
-          <option value="">Padrão (Agenciada)</option>
-          <option value="DISPONIVEL">Disponível</option>
-          <option value="AGENCIADA">Agenciada</option>
-          <option value="RESERVADA">Reservada</option>
-          <option value="VENDIDA">Vendida</option>
-          <option value="RETIRADA">Retirada</option>
-        </select>
+      <div class="col-12 col-md-4">
+        <label class="form-label d-block">Situação</label>
+        <div class="d-flex flex-wrap align-items-center gap-3">
+          @for (item of legenda; track item[0]) {
+            <div class="form-check form-check-inline m-0">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                [id]="'situacao-' + item[0]"
+                [checked]="situacoesSelecionadas().has(item[0])"
+                (change)="alternarSituacao(item[0])"
+              />
+              <label class="form-check-label small" [for]="'situacao-' + item[0]">{{ item[0] }}</label>
+            </div>
+          }
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="alternarTodasAsSituacoes()">
+            Todas
+          </button>
+        </div>
+        @if (situacoesSelecionadas().size === 0) {
+          <div class="form-text">Nenhuma selecionada — usa o padrão (Agenciada)</div>
+        }
       </div>
       <div class="col-6 col-md-2">
         <label class="form-label" for="statusContrato">Status do contrato</label>

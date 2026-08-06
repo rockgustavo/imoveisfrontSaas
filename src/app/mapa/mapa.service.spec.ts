@@ -35,14 +35,22 @@ describe('MapaService', () => {
   });
 
   it('envia apenas os filtros preenchidos', () => {
-    service.buscar(bbox, { situacao: 'AGENCIADA', uf: 'SP' }).subscribe();
+    service.buscar(bbox, { situacao: ['AGENCIADA'], uf: 'SP' }).subscribe();
 
     const requisicao = httpTesting.expectOne((req) => req.url === mapaUrl);
-    expect(requisicao.request.params.get('situacao')).toBe('AGENCIADA');
+    expect(requisicao.request.params.getAll('situacao')).toEqual(['AGENCIADA']);
     expect(requisicao.request.params.get('uf')).toBe('SP');
     expect(requisicao.request.params.has('statusContrato')).toBe(false);
     expect(requisicao.request.params.has('localidade')).toBe(false);
     expect(requisicao.request.params.has('proprietarioId')).toBe(false);
+    requisicao.flush(respostaVazia);
+  });
+
+  it('envia situacao repetido quando mais de uma é selecionada', () => {
+    service.buscar(bbox, { situacao: ['AGENCIADA', 'DISPONIVEL'] }).subscribe();
+
+    const requisicao = httpTesting.expectOne((req) => req.url === mapaUrl);
+    expect(requisicao.request.params.getAll('situacao')).toEqual(['AGENCIADA', 'DISPONIVEL']);
     requisicao.flush(respostaVazia);
   });
 

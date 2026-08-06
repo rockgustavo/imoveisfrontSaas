@@ -57,6 +57,23 @@ export interface SalvarPropriedadeComando {
   localidade: string;
   uf: string;
   enderecoValidado: boolean;
+  latitude?: number;
+  longitude?: number;
+}
+
+export interface EnderecoParaGeolocalizacao {
+  cep: string;
+  logradouro: string;
+  numero: string;
+  bairro: string;
+  localidade: string;
+  uf: string;
+}
+
+export interface ResultadoPesquisaGeolocalizacao {
+  encontrada: boolean;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export interface PropriedadeFiltro {
