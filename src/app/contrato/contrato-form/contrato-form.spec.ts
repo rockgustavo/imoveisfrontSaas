@@ -10,7 +10,7 @@ import { OrcamentoResumo } from '../../orcamento/orcamento.model';
 import { OrcamentoService } from '../../orcamento/orcamento.service';
 import { Propriedade } from '../../propriedade/propriedade.model';
 import { PropriedadeService } from '../../propriedade/propriedade.service';
-import { Contrato } from '../contrato.model';
+import { Contrato, ContratoHistorico } from '../contrato.model';
 import { ContratoService } from '../contrato.service';
 import { ContratoForm } from './contrato-form';
 
@@ -79,6 +79,30 @@ const contratoExemplo: Contrato = {
   alteradoEm: '2026-08-01T00:00:00Z'
 };
 
+const propriedadeExcluidaPorAditivo: Propriedade = {
+  ...propriedadeExemplo,
+  id: '019fc00d-c808-7759-ba91-903f935ae2d0',
+  logradouro: 'Rua Excluída Por Aditivo'
+};
+
+const historicoExemplo: ContratoHistorico = {
+  versao: 1,
+  ocorridoEm: '2026-08-02T12:00:00Z',
+  contrato: {
+    ...contratoExemplo,
+    status: 'ATIVO',
+    agenciamentos: [
+      {
+        id: 'agenciamento-0',
+        propriedadeId: propriedadeExcluidaPorAditivo.id,
+        comissaoPercentual: '4.00',
+        valorPedido: '400000.00',
+        contratoAtivo: true
+      }
+    ]
+  }
+};
+
 function configurar(id: string | null, orcamentoIdQuery: string | null, contratoParaCarregar: Contrato = contratoExemplo) {
   const service = {
     buscarPorId: vi.fn().mockReturnValue(of(contratoParaCarregar)),
@@ -86,7 +110,8 @@ function configurar(id: string | null, orcamentoIdQuery: string | null, contrato
     ativar: vi.fn().mockReturnValue(of({ ...contratoExemplo, status: 'ATIVO' })),
     encerrar: vi.fn().mockReturnValue(of({ ...contratoExemplo, status: 'ENCERRADO' })),
     cancelar: vi.fn().mockReturnValue(of({ ...contratoExemplo, status: 'CANCELADO' })),
-    registrarAditivo: vi.fn().mockReturnValue(of(contratoExemplo))
+    registrarAditivo: vi.fn().mockReturnValue(of(contratoExemplo)),
+    historicoEm: vi.fn().mockReturnValue(of(historicoExemplo))
   };
   const orcamentoService = {
     listar: vi
@@ -94,7 +119,13 @@ function configurar(id: string | null, orcamentoIdQuery: string | null, contrato
       .mockReturnValue(of({ content: [orcamentoAceitoExemplo], page: 0, size: 100, totalElements: 1, totalPages: 1 }))
   };
   const pessoaService = { buscarPorId: vi.fn().mockReturnValue(of(proprietarioExemplo)) };
-  const propriedadeService = { buscarPorId: vi.fn().mockReturnValue(of(propriedadeExemplo)) };
+  const propriedadeService = {
+    buscarPorId: vi
+      .fn()
+      .mockImplementation((propriedadeId: string) =>
+        of(propriedadeId === propriedadeExcluidaPorAditivo.id ? propriedadeExcluidaPorAditivo : propriedadeExemplo)
+      )
+  };
   const router = { navigate: vi.fn() };
   const keycloak = { hasRealmRole: (_papel: string) => true } as Keycloak;
 
@@ -264,6 +295,52 @@ describe('ContratoForm — modo detalhe', () => {
   });
 });
 
+describe('ContratoForm — consulta de estado em uma data', () => {
+  it('não consulta enquanto a data não for informada', () => {
+    const { component, service } = configurar(contratoExemplo.id, null);
+
+    component['consultarHistorico']();
+
+    expect(service.historicoEm).not.toHaveBeenCalled();
+    expect(component['historicoForm'].touched).toBe(true);
+  });
+
+  it('consulta a data informada e expõe o snapshot retornado', () => {
+    const { component, service } = configurar(contratoExemplo.id, null);
+    component['historicoForm'].setValue({ data: '2026-08-02' });
+
+    component['consultarHistorico']();
+
+    expect(service.historicoEm).toHaveBeenCalledWith(contratoExemplo.id, '2026-08-02');
+    expect(component['historico']()).toEqual(historicoExemplo);
+    expect(component['consultandoHistorico']()).toBe(false);
+  });
+
+  it('resolve o endereço de propriedade que o snapshot tem mas o contrato atual já não tem', () => {
+    const { component, propriedadeService } = configurar(contratoExemplo.id, null);
+    component['historicoForm'].setValue({ data: '2026-08-02' });
+
+    component['consultarHistorico']();
+
+    expect(propriedadeService.buscarPorId).toHaveBeenCalledWith(propriedadeExcluidaPorAditivo.id);
+    expect(component['propriedadesPorId']()[propriedadeExcluidaPorAditivo.id]).toEqual(propriedadeExcluidaPorAditivo);
+    expect(component['propriedadesPorId']()[propriedadeExemplo.id]).toEqual(propriedadeExemplo);
+  });
+
+  it('expõe o erro normalizado quando não há snapshot até a data pedida', () => {
+    const { component, service } = configurar(contratoExemplo.id, null);
+    const erro: AppError = { status: 404, title: 'Não encontrado', detail: 'sem histórico até a data' };
+    service.historicoEm.mockReturnValue(throwError(() => erro));
+    component['historicoForm'].setValue({ data: '2020-01-01' });
+
+    component['consultarHistorico']();
+
+    expect(component['erroHistorico']()).toEqual(erro);
+    expect(component['historico']()).toBeNull();
+    expect(component['consultandoHistorico']()).toBe(false);
+  });
+});
+
 describe('ContratoForm — reaproveitamento de rota', () => {
   it('recarrega ao navegar de um contrato para outro sem recriar o componente', () => {
     const paramMap$ = new Subject<ReturnType<typeof convertToParamMap>>();
@@ -274,7 +351,8 @@ describe('ContratoForm — reaproveitamento de rota', () => {
       ativar: vi.fn(),
       encerrar: vi.fn(),
       cancelar: vi.fn(),
-      registrarAditivo: vi.fn()
+      registrarAditivo: vi.fn(),
+      historicoEm: vi.fn().mockReturnValue(of(historicoExemplo))
     };
     const pessoaService = { buscarPorId: vi.fn().mockReturnValue(of(proprietarioExemplo)) };
     const propriedadeService = { buscarPorId: vi.fn().mockReturnValue(of(propriedadeExemplo)) };
@@ -303,5 +381,45 @@ describe('ContratoForm — reaproveitamento de rota', () => {
 
     expect(service.buscarPorId).toHaveBeenLastCalledWith('outro-id');
     expect(component['contrato']()?.status).toBe('ATIVO');
+  });
+
+  it('não carrega o histórico do contrato anterior para o contrato seguinte', () => {
+    const paramMap$ = new Subject<ReturnType<typeof convertToParamMap>>();
+    const service = {
+      buscarPorId: vi.fn().mockReturnValue(of(contratoExemplo)),
+      criar: vi.fn(),
+      ativar: vi.fn(),
+      encerrar: vi.fn(),
+      cancelar: vi.fn(),
+      registrarAditivo: vi.fn(),
+      historicoEm: vi.fn().mockReturnValue(of(historicoExemplo))
+    };
+
+    TestBed.configureTestingModule({
+      imports: [ContratoForm],
+      providers: [
+        { provide: ContratoService, useValue: service },
+        { provide: OrcamentoService, useValue: { listar: vi.fn().mockReturnValue(of({ content: [], page: 0, size: 100, totalElements: 0, totalPages: 0 })) } },
+        { provide: PessoaService, useValue: { buscarPorId: vi.fn().mockReturnValue(of(proprietarioExemplo)) } },
+        { provide: PropriedadeService, useValue: { buscarPorId: vi.fn().mockReturnValue(of(propriedadeExemplo)) } },
+        { provide: Router, useValue: { navigate: vi.fn() } },
+        { provide: Keycloak, useValue: { hasRealmRole: (_papel: string) => true } as Keycloak },
+        {
+          provide: ActivatedRoute,
+          useValue: { paramMap: paramMap$, queryParamMap: of(convertToParamMap({})) }
+        }
+      ]
+    });
+    const component = TestBed.createComponent(ContratoForm).componentInstance;
+
+    paramMap$.next(convertToParamMap({ id: contratoExemplo.id }));
+    component['historicoForm'].setValue({ data: '2026-08-02' });
+    component['consultarHistorico']();
+    expect(component['historico']()).toEqual(historicoExemplo);
+
+    paramMap$.next(convertToParamMap({ id: 'outro-id' }));
+
+    expect(component['historico']()).toBeNull();
+    expect(component['historicoForm'].controls.data.value).toBe('');
   });
 });

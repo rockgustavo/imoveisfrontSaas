@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import Keycloak from 'keycloak-js';
-import { combineLatest, forkJoin, of } from 'rxjs';
+import { combineLatest, forkJoin } from 'rxjs';
 
 import { AppError } from '../../core/app-error.model';
 import { Pessoa } from '../../pessoa/pessoa.model';
@@ -49,7 +49,7 @@ export class ContratoForm {
   protected readonly contratoId = signal<string | null>(null);
   protected readonly contrato = signal<Contrato | null>(null);
   protected readonly proprietario = signal<Pessoa | null>(null);
-  protected readonly propriedadesPorId = signal<Record<string, Propriedade>>({});
+  protected readonly propriedadesPorId = signal<Record<string, Propriedade | undefined>>({});
   protected readonly orcamentosAceitos = signal<OrcamentoResumo[]>([]);
   protected readonly carregando = signal(false);
   protected readonly salvando = signal(false);
@@ -108,6 +108,10 @@ export class ContratoForm {
     return this.contrato()?.status === 'ATIVO';
   }
 
+  protected get dataDoHistoricoInvalida(): boolean {
+    return campoInvalido(this.historicoForm, 'data');
+  }
+
   protected invalido(campo: string): boolean {
     return campoInvalido(this.form, campo);
   }
@@ -129,6 +133,8 @@ export class ContratoForm {
     this.proprietario.set(null);
     this.erro.set(null);
     this.pendencias.set([]);
+    this.propriedadesPorId.set({});
+    this.limparHistorico();
     this.form.reset({
       orcamentoId: orcamentoIdPreSelecionado ?? '',
       vigenciaInicio: '',
@@ -258,6 +264,7 @@ export class ContratoForm {
     this.service.historicoEm(id, this.historicoForm.getRawValue().data).subscribe({
       next: (historico) => {
         this.historico.set(historico);
+        this.carregarPropriedadesDosAgenciamentos(historico.contrato.agenciamentos);
         this.consultandoHistorico.set(false);
       },
       error: (erro: AppError) => {
@@ -270,6 +277,8 @@ export class ContratoForm {
   private carregarContrato(id: string): void {
     this.carregando.set(true);
     this.erro.set(null);
+    this.propriedadesPorId.set({});
+    this.limparHistorico();
 
     this.service.buscarPorId(id).subscribe({
       next: (contrato) => {
@@ -290,19 +299,28 @@ export class ContratoForm {
   }
 
   private carregarPropriedadesDosAgenciamentos(agenciamentos: Agenciamento[]): void {
-    const ids = [...new Set(agenciamentos.map((item) => item.propriedadeId))];
-    if (ids.length === 0) {
-      this.propriedadesPorId.set({});
+    const jaCarregadas = this.propriedadesPorId();
+    const idsFaltantes = [...new Set(agenciamentos.map((item) => item.propriedadeId))].filter(
+      (id) => !jaCarregadas[id]
+    );
+    if (idsFaltantes.length === 0) {
       return;
     }
-    forkJoin(ids.map((id) => this.propriedadeService.buscarPorId(id))).subscribe({
+    forkJoin(idsFaltantes.map((id) => this.propriedadeService.buscarPorId(id))).subscribe({
       next: (propriedades) => {
-        const mapa: Record<string, Propriedade> = {};
-        propriedades.forEach((propriedade, indice) => (mapa[ids[indice]] = propriedade));
+        const mapa: Record<string, Propriedade | undefined> = { ...this.propriedadesPorId() };
+        propriedades.forEach((propriedade, indice) => (mapa[idsFaltantes[indice]] = propriedade));
         this.propriedadesPorId.set(mapa);
       },
-      error: () => of(undefined)
+      error: () => undefined
     });
+  }
+
+  private limparHistorico(): void {
+    this.historico.set(null);
+    this.erroHistorico.set(null);
+    this.consultandoHistorico.set(false);
+    this.historicoForm.reset({ data: '' });
   }
 
   private tratarErro(erro: AppError): void {
