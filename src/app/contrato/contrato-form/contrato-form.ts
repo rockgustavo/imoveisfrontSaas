@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -19,7 +20,7 @@ import {
   campoInvalido,
   limparErrosDoServidor
 } from '../../shared/validators/erros-do-servidor';
-import { Agenciamento, Contrato, TipoAditivo } from '../contrato.model';
+import { Agenciamento, Contrato, ContratoHistorico, TipoAditivo } from '../contrato.model';
 import { ContratoService } from '../contrato.service';
 
 const ROTULOS: Record<string, string> = {
@@ -31,7 +32,7 @@ const ROTULOS: Record<string, string> = {
 
 @Component({
   selector: 'app-contrato-form',
-  imports: [ReactiveFormsModule, RouterLink, CampoErro, ResumoValidacao],
+  imports: [ReactiveFormsModule, RouterLink, CampoErro, ResumoValidacao, DatePipe],
   templateUrl: './contrato-form.html',
   styleUrl: './contrato-form.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -55,6 +56,9 @@ export class ContratoForm {
   protected readonly erro = signal<AppError | null>(null);
   protected readonly erroAditivo = signal<AppError | null>(null);
   protected readonly pendencias = signal<CampoPendente[]>([]);
+  protected readonly historico = signal<ContratoHistorico | null>(null);
+  protected readonly consultandoHistorico = signal(false);
+  protected readonly erroHistorico = signal<AppError | null>(null);
 
   protected readonly form = new FormGroup({
     orcamentoId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
@@ -69,6 +73,10 @@ export class ContratoForm {
     justificativa: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     comissaoPercentual: new FormControl<number | null>(null),
     valorPedido: new FormControl<number | null>(null)
+  });
+
+  protected readonly historicoForm = new FormGroup({
+    data: new FormControl('', { nonNullable: true, validators: [Validators.required] })
   });
 
   protected get modoDetalhe(): boolean {
@@ -236,6 +244,27 @@ export class ContratoForm {
         },
         error: (erro: AppError) => this.erroAditivo.set(erro)
       });
+  }
+
+  protected consultarHistorico(): void {
+    const id = this.contratoId();
+    if (!id || this.historicoForm.invalid) {
+      this.historicoForm.markAllAsTouched();
+      return;
+    }
+    this.consultandoHistorico.set(true);
+    this.erroHistorico.set(null);
+    this.historico.set(null);
+    this.service.historicoEm(id, this.historicoForm.getRawValue().data).subscribe({
+      next: (historico) => {
+        this.historico.set(historico);
+        this.consultandoHistorico.set(false);
+      },
+      error: (erro: AppError) => {
+        this.erroHistorico.set(erro);
+        this.consultandoHistorico.set(false);
+      }
+    });
   }
 
   private carregarContrato(id: string): void {

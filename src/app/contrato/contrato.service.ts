@@ -8,6 +8,7 @@ import {
   AditivoComando,
   Contrato,
   ContratoFiltro,
+  ContratoHistorico,
   ContratoResumo,
   CriarContratoComando,
   EncerrarContratoComando
@@ -48,6 +49,10 @@ export class ContratoService {
 
   registrarAditivo(id: string, comando: AditivoComando): Observable<Contrato> {
     return this.http.post<Contrato>(`${this.contratosUrl}/${id}/aditivos`, comando);
+  }
+
+  historicoEm(id: string, data: string): Observable<ContratoHistorico> {
+    return this.http.get<ContratoHistorico>(`${this.contratosUrl}/${id}/historico`, { params: { data } });
   }
 
   private paraParams(filtro: ContratoFiltro, page: number, size: number): HttpParams {

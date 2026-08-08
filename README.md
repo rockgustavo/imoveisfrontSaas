@@ -3,6 +3,8 @@
 > Frontend Angular do SaaS de administração de corretora de imóveis.
 > Consome a API e o Keycloak publicados pelo backend ([`imoveisbackSaas`](https://github.com/rockgustavo/imoveisbackSaas), repositório separado).
 
+📘 [Manual do usuário](Manual_do_Usuario.pdf) — como operar o sistema no dia a dia (login, papéis, propriedades, orçamentos, contratos).
+
 ![Angular](https://img.shields.io/badge/Angular-21-DD0031?style=flat&logo=angular&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat&logo=typescript&logoColor=white)
 ![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-7952B3?style=flat&logo=bootstrap&logoColor=white)
@@ -59,7 +61,7 @@ src/app/
 ├── mapa/                     domínio — visão geográfica agregada, sem entidade própria (Leaflet)
 ├── painel/                   domínio — indicadores operacionais, tela inicial (embute o mapa)
 ├── orcamento/                domínio — proposta comercial que antecede o contrato
-└── contrato/                 domínio — ativação, encerramento, cancelamento, aditivos
+└── contrato/                 domínio — ativação, encerramento, cancelamento, aditivos, consulta de estado numa data
 ```
 
 Pasta por domínio, não por tipo de arquivo: a tela, o serviço e o modelo de `imobiliaria` ficam juntos, do mesmo jeito que o módulo correspondente no backend. Domínio novo é pasta nova, não um arquivo a mais em cada uma de cinco pastas técnicas.

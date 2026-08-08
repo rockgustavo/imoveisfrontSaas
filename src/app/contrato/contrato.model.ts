@@ -66,3 +66,9 @@ export interface ContratoFiltro {
   status?: StatusContrato;
   vencendoEmDias?: number;
 }
+
+export interface ContratoHistorico {
+  versao: number;
+  ocorridoEm: string;
+  contrato: Contrato;
+}

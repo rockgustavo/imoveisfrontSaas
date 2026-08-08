@@ -242,4 +242,64 @@
       </div>
     </div>
   }
+
+  <div class="card mt-3">
+    <div class="card-body">
+      <h2 class="h6 mb-3">Consultar estado em uma data</h2>
+      @if (erroHistorico()) {
+        <div class="alert alert-danger" role="alert">{{ erroHistorico()?.detail }}</div>
+      }
+      <form [formGroup]="historicoForm" (ngSubmit)="consultarHistorico()">
+        <div class="row g-3 align-items-end">
+          <div class="col-6 col-md-3">
+            <label class="form-label" for="historicoData">Data</label>
+            <input id="historicoData" class="form-control" type="date" formControlName="data" />
+          </div>
+          <div class="col-6 col-md-3">
+            <button class="btn btn-outline-primary btn-sm" type="submit" [disabled]="consultandoHistorico()">
+              Consultar
+            </button>
+          </div>
+        </div>
+      </form>
+
+      @if (historico(); as historicoAtual) {
+        <div class="mt-3">
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            <span class="badge bg-primary">{{ historicoAtual.contrato.status }}</span>
+            <span class="badge bg-light text-dark border">
+              Vigência: {{ historicoAtual.contrato.vigenciaInicio }} – {{ historicoAtual.contrato.vigenciaFim }}
+            </span>
+            <span class="badge bg-secondary">versão {{ historicoAtual.versao }}</span>
+            <span class="badge bg-light text-dark border">registrado em {{ historicoAtual.ocorridoEm | date: 'short' }}</span>
+          </div>
+          <div class="table-responsive">
+            <table class="table mb-0">
+              <thead>
+                <tr>
+                  <th>Propriedade</th>
+                  <th>Comissão</th>
+                  <th>Valor pedido</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (agenciamento of historicoAtual.contrato.agenciamentos; track agenciamento.id) {
+                  <tr>
+                    <td>{{ propriedadesPorId()[agenciamento.propriedadeId]?.logradouro ?? agenciamento.propriedadeId }}</td>
+                    <td>{{ agenciamento.comissaoPercentual }}%</td>
+                    <td>{{ agenciamento.valorPedido }}</td>
+                  </tr>
+                }
+                @if (historicoAtual.contrato.agenciamentos.length === 0) {
+                  <tr>
+                    <td colspan="3" class="text-center text-muted py-3">Nenhuma propriedade agenciada nesta data</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
 }
