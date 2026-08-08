@@ -61,7 +61,7 @@ src/app/
 ├── mapa/                     domínio — visão geográfica agregada, sem entidade própria (Leaflet)
 ├── painel/                   domínio — indicadores operacionais, tela inicial (embute o mapa)
 ├── orcamento/                domínio — proposta comercial que antecede o contrato
-└── contrato/                 domínio — ativação, encerramento, cancelamento, aditivos, consulta de estado numa data
+└── contrato/                 domínio — ativação, encerramento, cancelamento, aditivos, consulta de estado numa data, PDF do instrumento contratual
 ```
 
 Pasta por domínio, não por tipo de arquivo: a tela, o serviço e o modelo de `imobiliaria` ficam juntos, do mesmo jeito que o módulo correspondente no backend. Domínio novo é pasta nova, não um arquivo a mais em cada uma de cinco pastas técnicas.
@@ -72,6 +72,7 @@ Pasta por domínio, não por tipo de arquivo: a tela, o serviço e o modelo de `
 | `OnPush` em todo componente | Com signals, a detecção de mudança fica previsível — o componente só re-renderiza quando um sinal que ele lê muda |
 | Um serviço por domínio encapsulando `HttpClient` | Componente não conhece URL nem formato de payload; trocar contrato mexe em um arquivo |
 | Interceptor único para token e erro | Toda requisição autenticada e todo erro traduzido no mesmo lugar, sem repetir `catchError` por chamada |
+| Interceptor trata corpo de erro `Blob` separado do corpo JSON | Download de arquivo (`responseType: 'blob'`, ex. PDF do contrato) recebe o corpo de erro também como `Blob`, não como JSON já interpretado — sem esse caminho, um `404` na geração do PDF viraria "Erro de comunicação" genérico em vez do `codigo`/`detail` de negócio |
 | Mapeamento manual `record` ↔ modelo | Sem camada de mapper; o `record` do backend vira interface TypeScript direta |
 | `shared/page-response.model.ts` genérico | Contrato de paginação é o mesmo em todo módulo (`content`, `page`, `size`, `totalElements`, `totalPages`) — uma interface, reaproveitada, em vez de repetir a forma em cada domínio |
 

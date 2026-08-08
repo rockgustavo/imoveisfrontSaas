@@ -113,7 +113,18 @@
         @if (podeCancelar) {
           <button class="btn btn-outline-danger btn-sm" type="button" (click)="cancelar()">Cancelar</button>
         }
+        <button
+          class="btn btn-outline-secondary btn-sm"
+          type="button"
+          [disabled]="carregandoDocumento()"
+          (click)="visualizarDocumento()"
+        >
+          <i class="bi bi-file-earmark-pdf me-1"></i>{{ carregandoDocumento() ? 'Gerando PDF...' : 'Visualizar' }}
+        </button>
       </div>
+      @if (erroDocumento()) {
+        <div class="alert alert-danger mt-3 mb-0" role="alert">{{ erroDocumento()?.detail }}</div>
+      }
     </div>
   </div>
 
@@ -279,6 +290,14 @@
             </span>
             <span class="badge bg-secondary">versão {{ historicoAtual.versao }}</span>
             <span class="badge bg-light text-dark border">registrado em {{ historicoAtual.ocorridoEm | date: 'short' }}</span>
+            <button
+              class="btn btn-outline-secondary btn-sm"
+              type="button"
+              [disabled]="carregandoDocumento()"
+              (click)="visualizarDocumento(historicoForm.getRawValue().data)"
+            >
+              <i class="bi bi-file-earmark-pdf me-1"></i>{{ carregandoDocumento() ? 'Gerando PDF...' : 'Visualizar desta data' }}
+            </button>
           </div>
           <div class="table-responsive">
             <table class="table mb-0">

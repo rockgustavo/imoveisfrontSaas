@@ -1,3 +1,4 @@
+import { HttpHeaders, HttpResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import Keycloak from 'keycloak-js';
@@ -111,7 +112,15 @@ function configurar(id: string | null, orcamentoIdQuery: string | null, contrato
     encerrar: vi.fn().mockReturnValue(of({ ...contratoExemplo, status: 'ENCERRADO' })),
     cancelar: vi.fn().mockReturnValue(of({ ...contratoExemplo, status: 'CANCELADO' })),
     registrarAditivo: vi.fn().mockReturnValue(of(contratoExemplo)),
-    historicoEm: vi.fn().mockReturnValue(of(historicoExemplo))
+    historicoEm: vi.fn().mockReturnValue(of(historicoExemplo)),
+    visualizarDocumento: vi.fn().mockReturnValue(
+      of(
+        new HttpResponse({
+          body: new Blob(['%PDF-conteúdo-de-teste'], { type: 'application/pdf' }),
+          headers: new HttpHeaders({ 'Content-Disposition': 'attachment; filename="contrato-019fc00d.pdf"' })
+        })
+      )
+    )
   };
   const orcamentoService = {
     listar: vi
@@ -338,6 +347,79 @@ describe('ContratoForm — consulta de estado em uma data', () => {
     expect(component['erroHistorico']()).toEqual(erro);
     expect(component['historico']()).toBeNull();
     expect(component['consultandoHistorico']()).toBe(false);
+  });
+});
+
+describe('ContratoForm — visualização do instrumento em PDF', () => {
+  let linkCriado: { click: ReturnType<typeof vi.fn>; href: string; target: string; rel: string };
+
+  // Instalado só após o componente já ter renderizado — o próprio template tem um <a> real
+  // ("Voltar"), e interceptar document.createElement('a') cedo demais quebraria essa renderização.
+  function interceptarCriacaoDeLink(): void {
+    const criarElementoOriginal = document.createElement.bind(document);
+    linkCriado = { click: vi.fn(), href: '', target: '', rel: '' };
+    vi.spyOn(document, 'createElement').mockImplementation((tag: string) =>
+      tag === 'a' ? (linkCriado as unknown as HTMLAnchorElement) : criarElementoOriginal(tag)
+    );
+  }
+
+  beforeEach(() => {
+    // jsdom não implementa URL.createObjectURL/revokeObjectURL — adicionados diretamente no
+    // construtor real (em vez de vi.stubGlobal('URL', ...)) para não quebrar `new URL(...)`
+    // que o próprio Angular usa internamente durante o teste.
+    URL.createObjectURL = vi.fn().mockReturnValue('blob:url-de-teste') as typeof URL.createObjectURL;
+    URL.revokeObjectURL = vi.fn();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    Reflect.deleteProperty(URL, 'createObjectURL');
+    Reflect.deleteProperty(URL, 'revokeObjectURL');
+  });
+
+  it('abre o PDF do estado atual em nova aba, sem parâmetro de data', () => {
+    const { component, service } = configurar(contratoExemplo.id, null);
+    interceptarCriacaoDeLink();
+
+    component['visualizarDocumento']();
+
+    expect(service.visualizarDocumento).toHaveBeenCalledWith(contratoExemplo.id, undefined);
+    expect(linkCriado.click).toHaveBeenCalled();
+    expect(component['carregandoDocumento']()).toBe(false);
+    expect(component['erroDocumento']()).toBeNull();
+  });
+
+  it('abre o PDF de uma data específica quando informada', () => {
+    const { component, service } = configurar(contratoExemplo.id, null);
+    interceptarCriacaoDeLink();
+
+    component['visualizarDocumento']('2026-03-15');
+
+    expect(service.visualizarDocumento).toHaveBeenCalledWith(contratoExemplo.id, '2026-03-15');
+  });
+
+  it('abre o blob numa nova aba, sem forçar download', () => {
+    const { component } = configurar(contratoExemplo.id, null);
+    interceptarCriacaoDeLink();
+
+    component['visualizarDocumento']();
+
+    expect(linkCriado.href).toBe('blob:url-de-teste');
+    expect(linkCriado.target).toBe('_blank');
+    expect(linkCriado.rel).toBe('noopener');
+  });
+
+  it('expõe o erro normalizado quando a geração do PDF falha', () => {
+    const { component, service } = configurar(contratoExemplo.id, null);
+    interceptarCriacaoDeLink();
+    const erro: AppError = { status: 404, title: 'Não encontrado', detail: 'sem histórico até a data' };
+    service.visualizarDocumento.mockReturnValue(throwError(() => erro));
+
+    component['visualizarDocumento']();
+
+    expect(component['erroDocumento']()).toEqual(erro);
+    expect(component['carregandoDocumento']()).toBe(false);
+    expect(linkCriado.click).not.toHaveBeenCalled();
   });
 });
 

@@ -1,4 +1,5 @@
 import { DatePipe } from '@angular/common';
+import { HttpResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -59,6 +60,8 @@ export class ContratoForm {
   protected readonly historico = signal<ContratoHistorico | null>(null);
   protected readonly consultandoHistorico = signal(false);
   protected readonly erroHistorico = signal<AppError | null>(null);
+  protected readonly carregandoDocumento = signal(false);
+  protected readonly erroDocumento = signal<AppError | null>(null);
 
   protected readonly form = new FormGroup({
     orcamentoId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
@@ -272,6 +275,39 @@ export class ContratoForm {
         this.consultandoHistorico.set(false);
       }
     });
+  }
+
+  protected visualizarDocumento(data?: string): void {
+    const id = this.contratoId();
+    if (!id) {
+      return;
+    }
+    this.carregandoDocumento.set(true);
+    this.erroDocumento.set(null);
+    this.service.visualizarDocumento(id, data).subscribe({
+      next: (resposta) => {
+        this.abrirArquivo(resposta);
+        this.carregandoDocumento.set(false);
+      },
+      error: (erro: AppError) => {
+        this.erroDocumento.set(erro);
+        this.carregandoDocumento.set(false);
+      }
+    });
+  }
+
+  private abrirArquivo(resposta: HttpResponse<Blob>): void {
+    const corpo = resposta.body;
+    if (!corpo) {
+      return;
+    }
+    const url = URL.createObjectURL(corpo);
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
   }
 
   private carregarContrato(id: string): void {

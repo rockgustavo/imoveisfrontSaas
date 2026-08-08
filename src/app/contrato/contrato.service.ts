@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
@@ -53,6 +53,14 @@ export class ContratoService {
 
   historicoEm(id: string, data: string): Observable<ContratoHistorico> {
     return this.http.get<ContratoHistorico>(`${this.contratosUrl}/${id}/historico`, { params: { data } });
+  }
+
+  visualizarDocumento(id: string, data?: string): Observable<HttpResponse<Blob>> {
+    return this.http.get(`${this.contratosUrl}/${id}/documento`, {
+      params: data ? { data } : {},
+      responseType: 'blob',
+      observe: 'response'
+    });
   }
 
   private paraParams(filtro: ContratoFiltro, page: number, size: number): HttpParams {

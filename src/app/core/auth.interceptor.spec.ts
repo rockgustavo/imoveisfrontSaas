@@ -85,6 +85,55 @@ describe('authInterceptor', () => {
 
     expect(logout).not.toHaveBeenCalled();
   });
+
+  it('lê o ProblemDetail quando o corpo do erro chega como Blob (download com responseType blob)', async () => {
+    configurar({ authenticated: true, token: 'token-123', updateToken: vi.fn().mockResolvedValue(true) });
+    let erroCapturado: unknown;
+
+    httpClient
+      .get('/api/v1/contratos/1/documento', { responseType: 'blob' })
+      .subscribe({ error: (erro: unknown) => (erroCapturado = erro) });
+    await aguardarMicrotasks();
+
+    const corpo = JSON.stringify({
+      status: 404,
+      title: 'Não encontrado',
+      detail: 'sem histórico até a data',
+      codigo: 'CONTRATO_HISTORICO_NAO_ENCONTRADO'
+    });
+    httpTesting
+      .expectOne('/api/v1/contratos/1/documento')
+      .flush(new Blob([corpo], { type: 'application/problem+json' }), { status: 404, statusText: 'Not Found' });
+    await aguardarMicrotasks();
+
+    expect(erroCapturado).toEqual({
+      status: 404,
+      title: 'Não encontrado',
+      detail: 'sem histórico até a data',
+      codigo: 'CONTRATO_HISTORICO_NAO_ENCONTRADO'
+    });
+  });
+
+  it('não quebra quando o corpo do erro em Blob não é JSON válido', async () => {
+    configurar({ authenticated: true, token: 'token-123', updateToken: vi.fn().mockResolvedValue(true) });
+    let erroCapturado: unknown;
+
+    httpClient
+      .get('/api/v1/contratos/1/documento', { responseType: 'blob' })
+      .subscribe({ error: (erro: unknown) => (erroCapturado = erro) });
+    await aguardarMicrotasks();
+
+    httpTesting
+      .expectOne('/api/v1/contratos/1/documento')
+      .flush(new Blob(['<html>erro do servidor</html>'], { type: 'text/html' }), {
+        status: 500,
+        statusText: 'Internal Server Error'
+      });
+    await aguardarMicrotasks();
+
+    expect((erroCapturado as { status: number }).status).toBe(500);
+    expect((erroCapturado as { title: string }).title).toBe('Erro de comunicação');
+  });
 });
 
 describe('paraAppError', () => {

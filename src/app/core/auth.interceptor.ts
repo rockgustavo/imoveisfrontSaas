@@ -1,7 +1,7 @@
 import { HttpErrorResponse, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
 import Keycloak from 'keycloak-js';
-import { catchError, from, switchMap, throwError } from 'rxjs';
+import { Observable, catchError, from, map, of, switchMap, throwError } from 'rxjs';
 
 import { AppError } from './app-error.model';
 
@@ -20,13 +20,16 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return from(anexarToken(req, keycloak)).pipe(
     switchMap((requisicaoAutorizada) => next(requisicaoAutorizada)),
-    catchError((erro: unknown) => {
-      const appError = paraAppError(erro);
-      if (appError.codigo === CODIGO_ACESSO_REVOGADO) {
-        keycloak.logout({ redirectUri: window.location.origin });
-      }
-      return throwError(() => appError);
-    })
+    catchError((erro: unknown) =>
+      resolverAppError(erro).pipe(
+        switchMap((appError) => {
+          if (appError.codigo === CODIGO_ACESSO_REVOGADO) {
+            keycloak.logout({ redirectUri: window.location.origin });
+          }
+          return throwError(() => appError);
+        })
+      )
+    )
   );
 };
 
@@ -56,4 +59,30 @@ export function paraAppError(erro: unknown): AppError {
 
 function isProblemDetail(corpo: unknown): corpo is ProblemDetailBody {
   return typeof corpo === 'object' && corpo !== null && ('title' in corpo || 'detail' in corpo);
+}
+
+function resolverAppError(erro: unknown): Observable<AppError> {
+  if (erro instanceof HttpErrorResponse && erro.error instanceof Blob) {
+    return from(erro.error.text()).pipe(
+      map((texto) =>
+        paraAppError(
+          new HttpErrorResponse({
+            error: interpretarComoJson(texto),
+            status: erro.status,
+            statusText: erro.statusText,
+            url: erro.url ?? undefined
+          })
+        )
+      )
+    );
+  }
+  return of(paraAppError(erro));
+}
+
+function interpretarComoJson(texto: string): unknown {
+  try {
+    return JSON.parse(texto);
+  } catch {
+    return texto;
+  }
 }
